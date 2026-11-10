@@ -1,0 +1,2 @@
+# Local identifier for the Supabase CLI. The hosted project is linked with `npm run db:link`.
+project_id = "lucy-bat-mitzvah"

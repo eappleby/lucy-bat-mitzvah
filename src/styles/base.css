@@ -1,0 +1,166 @@
+:root {
+  --ink: #003b9d;
+  --cyan: #1f9fe0;
+  --coral: #fc564b;
+  --pink: #f0517e;
+  --teal: #0a8067;
+  --mint: #4bb5b2;
+  --weed: #44a784;
+  --lav: #8f83d9;
+  --sun: #fa8f0d;
+  --pearl: #f7ecd9;
+  --sand: #f4dfb8;
+  --paper: #ffffff;
+  --sea-top: #d9f3fb;
+  --display: 'Shantell Sans Variable', 'Patrick Hand', 'Comic Sans MS', cursive;
+  --hand: 'Patrick Hand', 'Shantell Sans Variable', 'Comic Sans MS', cursive;
+  /* Uneven corners make a box look drawn by hand. */
+  --wobble: 255px 18px 225px 18px / 18px 225px 18px 255px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--hand);
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-variation-settings: 'BNCE' 30, 'INFM' 70, 'SPAC' 0;
+  font-weight: 650;
+  line-height: 1.05;
+  margin: 0;
+}
+
+:focus-visible {
+  outline: 4px solid var(--sun);
+  outline-offset: 3px;
+}
+
+.sketch {
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 1.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble);
+  box-shadow: 4px 5px 0 var(--cyan);
+  font-family: var(--display);
+  font-variation-settings: 'BNCE' 20, 'INFM' 60;
+  font-weight: 650;
+  font-size: 1.15rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.btn:hover {
+  transform: translate(-1px, -2px) rotate(-1deg);
+  box-shadow: 6px 8px 0 var(--cyan);
+}
+.btn:active {
+  transform: translate(3px, 4px);
+  box-shadow: 1px 1px 0 var(--cyan);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.btn--big {
+  font-size: 1.5rem;
+  padding: 0.7rem 2rem;
+}
+.btn--small {
+  font-size: 1rem;
+  padding: 0.35rem 1rem;
+  box-shadow: 3px 3px 0 var(--cyan);
+}
+.btn__arrow {
+  width: 0.7em;
+  height: 0.7em;
+  border-right: 4px solid currentColor;
+  border-bottom: 4px solid currentColor;
+  border-radius: 2px;
+  transform: rotate(45deg) translate(-2px, -2px);
+  animation: nudge 1.4s ease-in-out infinite;
+}
+@keyframes nudge {
+  50% {
+    transform: rotate(45deg) translate(3px, 3px);
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-align: left;
+}
+.field > span {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  font: inherit;
+  font-size: 1.15rem;
+  color: #0b2a5c;
+  background: #fff;
+  border: 2.5px solid var(--ink);
+  border-radius: 14px 5px 12px 6px / 6px 12px 5px 14px;
+  padding: 0.45rem 0.7rem;
+}
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible {
+  outline: 4px solid var(--cyan);
+  outline-offset: 1px;
+}
+.field textarea {
+  resize: vertical;
+}
+/* Honeypot: hidden from people, tempting to bots. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.form-error {
+  margin: 0;
+  color: #b3202f;
+  font-size: 1.1rem;
+}

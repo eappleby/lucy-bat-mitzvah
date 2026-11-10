@@ -1,0 +1,10 @@
+/*
+  X-Robots-Tag: noindex, nofollow, noimageindex
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: same-origin
+
+/art/*
+  Cache-Control: public, max-age=604800
+
+/photos/*
+  Cache-Control: public, max-age=604800
