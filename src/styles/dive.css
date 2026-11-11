@@ -197,7 +197,7 @@
 /* ---------- The sea ---------- */
 .sea {
   position: relative;
-  /* clip, not hidden, so the journey stage can stick while you scroll */
+  /* clip, not hidden, so nothing inside can scroll sideways */
   overflow: clip;
   background: linear-gradient(
     180deg,

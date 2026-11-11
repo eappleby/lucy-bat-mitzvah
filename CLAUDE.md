@@ -27,7 +27,7 @@ Vite + Vue 3 (script setup, plain JS), Supabase (Postgres, Auth, Storage), Cloud
 - Secrets go in Cloudflare Pages settings and `.dev.vars`, never in the repo or in `shared/public-config.js`.
 - The site is unlisted. Keep the noindex tag, `robots.txt`, and the `X-Robots-Tag` header.
 - Art in `public/art/` is cut from the family's save the date. New art must match it: marker and colored pencil look, the palette in `base.css`. No characters from films or books, anywhere on the site.
-- The game in `components/journey/` is deliberately 8-bit: whole pixels only (1 pixel = 8 world units), flat colors, dark outlines, the Press Start 2P font. Characters are light cartoons, not likenesses, and no photo faces.
+- The game in `components/journey/` is deliberately 8-bit: whole pixels only (1 pixel = 8 world units), flat colors, dark outlines, the Press Start 2P font. Characters are light cartoons, not likenesses, and no photo faces. Lucy moves only with left and right input (arrow keys, the on screen buttons, sideways swipes); never take over vertical page scrolling.
 - Do not put real guest names or addresses in code, tests, or fixtures. Use made-up names.
 - All motion must respect `prefers-reduced-motion` (see the block at the end of `dive.css`).
 - `/movie` must stay pure CSS animation with absolute delays on one timeline. No JavaScript timers, or `scripts/render-movie.cjs` cannot export it.

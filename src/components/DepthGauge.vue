@@ -23,7 +23,7 @@ function measure() {
     if (el.getBoundingClientRect().top < window.innerHeight * 0.5) current = el.dataset.zone
   }
   zone.value = current
-  const stage = document.querySelector('.journey__track')
+  const stage = document.querySelector('.journey__stage')
   if (stage) {
     const r = stage.getBoundingClientRect()
     inJourney.value = r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight * 0.5

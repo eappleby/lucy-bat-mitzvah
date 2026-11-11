@@ -5,7 +5,7 @@ The website for Lucy Appleby's bat mitzvah on March 20, 2027 in Park Slope, Broo
 Right now the site does three jobs:
 
 1. **Checks everyone's contact info.** Each household gets a personal email, "Contact info up to date?", that lists what we have for them (address, phone, email, the main contact's birthday, and family with relationships) with Confirm info and Update info buttons. When we have no address, it asks for their contact info instead.
-2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that plays as you scroll, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive) until it is switched on in the admin.
+2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that you walk through with the arrows, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive) until it is switched on in the admin.
 3. **An admin** for the guest list, the contact emails, and the Meet Lucy switch.
 
 RSVPs by personal link, hotels, and the schedule come later. The database tables for RSVPs already exist.
@@ -157,12 +157,12 @@ Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.v
 
 ## The video game
 
-"How I got here" on Meet Lucy is a side scroller in the style of 1980s games. Lucy stays in the middle while the world scrolls past, and the page scroll moves her (with a top speed, so holding down a scroll key does not send her flying): an inchworm in Williamsburg, a baby in a stroller to Park Slope, a little princess hopping past PS 107, friends at the playground, art class and the ice rink, family trips to Paris, London, Berlin, Israel, Japan and Costa Rica with boogie boarding, color war at Camp Pembroke, dancing at MS 51, and finally the bema. She changes into the next version of herself each time she walks through a door.
+"How I got here" on Meet Lucy is a side scroller in the style of 1980s games. Lucy stays in the middle while the world slides past. Holding the right arrow key (or D), the forward button on screen, or swiping or dragging sideways on the game moves her forward at a steady walk; left goes back. Scrolling the page up and down just scrolls the page. The story: an inchworm in Williamsburg, a baby in a stroller to Park Slope, a little princess hopping past PS 107, friends at the playground, art class and the ice rink, family trips to Paris, London, Berlin, Israel, Japan and Costa Rica with boogie boarding, color war at Camp Pembroke, dancing at MS 51, and finally the bema. She changes into the next version of herself each time she walks through a door.
 
 - `src/components/journey/world.js` is the map: where every door, activity, place name, and sky change is, in world units (the world is 1000 tall).
 - `scripts/journey/scenery.mjs` draws the buildings and props as shapes. `scripts/journey/sprites.mjs` draws every character pixel by pixel, with their walk and activity frames.
 - `npm run journey` turns both into small pixel images in `public/journey/` (1 pixel = 8 world units) and writes their positions to `src/components/journey/art.json`. Run it after changing any of those three files.
-- `src/components/journey/Journey.vue` paints it all into one small canvas every frame and scales it up with no smoothing. When the scrolling stops, everyone stands and blinks.
+- `src/components/journey/Journey.vue` paints it all into one small canvas every frame and scales it up with no smoothing. When Lucy stops, everyone stands and blinks.
 
 The characters are a light, cartoon version of Lucy and the family, not likenesses.
 

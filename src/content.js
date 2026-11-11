@@ -47,8 +47,9 @@ export const copy = {
   reef: { heading: 'The reef crew', body: 'My friends. Pop a bubble to see who is inside.' },
   journey: {
     heading: 'How I got here',
-    body: 'Keep scrolling and I will walk you through it.',
-    hint: 'Scroll to walk',
+    body: 'Hold the right arrow and I will walk you through it.',
+    hint: 'Hold right arrow to walk',
+    hintTouch: 'Hold the arrow or swipe',
   },
   bottle: {
     heading: 'Message in a bottle',

@@ -1,11 +1,11 @@
 <script setup>
-// "How I got here": an 8-bit side scroller driven by the page scroll.
+// "How I got here": an 8-bit side scroller you walk through with the arrows.
 //
 // Lucy stays put on screen while the world slides past, like an old NES game.
 // Everything is drawn into one tiny canvas (1 pixel = 8 world units) that is scaled
 // up with no smoothing, so scenery, sprites and props share the same chunky pixels.
-// The motion eases toward the scroll position so it glides instead of jumping, and
-// when the scrolling stops everyone stands and blinks.
+// Holding left or right walks her at a steady pace that eases in and out, and
+// when she stops everyone stands and blinks.
 //
 // The pixel art comes from scripts/build-journey.mjs; the map is world.js.
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
@@ -18,18 +18,18 @@ import './journey.css'
 
 const PX = 8
 const G = W.GROUND
-const SCROLL_PER_UNIT = 1.2 // page pixels per world unit, at full size
-// Lucy's top speed in world units a second, so holding down a scroll key or the
-// scrollbar does not send her flying. Far behind (a jump from a link), she may go faster.
-const MAX_SPEED = 1000
+// Walking: holding left or right moves Lucy at a steady pace, easing in and out.
+const WALK = 620 // timeline units a second
+const ACCEL = 2600 // how quickly she gets up to speed and stops
+const FLING = 1800 // fastest a swipe can send her
 
 const art = shallowRef(null)
 const images = {}
-const track = ref(null)
+const stage = ref(null)
 const canvas = ref(null)
-const t = ref(0) // where the game is, easing toward target
-const target = ref(0) // where the scroll says it should be
-const speed = ref(0) // world units a second
+const t = ref(0) // where the game is along the timeline
+const speed = ref(0) // world units a second, smoothed, for walking versus standing
+const started = ref(false) // hides the hint once someone moves her
 const clock = ref(0) // seconds, for blinking, waving and drifting clouds
 const size = ref({ w: 1200, h: 800 })
 
@@ -39,7 +39,7 @@ const cw = computed(() => Math.ceil(size.value.w / pxCss.value))
 const ch = computed(() => Math.ceil(size.value.h / pxCss.value))
 const worldTop = computed(() => ch.value - W.WORLD_H / PX)
 const lucyCol = computed(() => Math.round(cw.value * (size.value.w < 700 ? 0.42 : 0.34)))
-const trackHeight = computed(() => Math.round(W.TIMELINE_LENGTH * SCROLL_PER_UNIT * (pxCss.value / PX) + size.value.h))
+const touchy = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
 
 const st = computed(() => W.stateAt(t.value))
 const camX = computed(() => st.value.x)
@@ -356,30 +356,35 @@ function blend(a, b, k) {
   return `rgb(${A.map((v, i) => Math.round(v + (B[i] - v) * k)).join(',')})`
 }
 
-// ---------- scrolling ----------
+// ---------- moving ----------
+// Arrow keys (or A and D), the two buttons, a sideways swipe or drag on the game,
+// and a sideways trackpad swipe all move Lucy. Scrolling the page up and down does not.
 let raf = 0
 let last = 0
 let onScreen = false
 let observer
+let resizer
+let vel = 0
+const held = { key: 0, button: 0 }
+let drag = null // { id, x, y, t, lastX, lastT, v, horizontal }
 
-function readScroll() {
-  if (!track.value) return
-  const rect = track.value.getBoundingClientRect()
-  target.value = clamp(-rect.top / (rect.height - size.value.h)) * W.TIMELINE_LENGTH
-}
+const dir = () => Math.sign(held.key + held.button)
 
 function frame(now) {
   raf = 0
   const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016
   last = now
   const before = t.value
-  const gap = target.value - t.value
-  const k = 1 - Math.exp(-dt * 7)
-  const limit = (MAX_SPEED + Math.max(0, Math.abs(gap) - 3000) * 0.5) * dt
-  const step = Math.max(-limit, Math.min(limit, gap * k))
-  t.value = Math.abs(gap) < 0.3 ? target.value : t.value + step
+  if (!drag) {
+    const want = dir() * WALK
+    const step = ACCEL * dt
+    vel += Math.max(-step, Math.min(step, want - vel))
+    t.value = clamp(t.value + vel * dt, 0, W.TIMELINE_LENGTH)
+    if (t.value === 0 || t.value === W.TIMELINE_LENGTH) vel = 0
+  }
   const v = Math.abs(t.value - before) / dt
-  speed.value += (Math.min(v, 900) - speed.value) * Math.min(1, dt * 8)
+  speed.value += (Math.min(v, 900) - speed.value) * Math.min(1, dt * 10)
+  if (v > 1) started.value = true
   clock.value += dt
   draw()
   if (onScreen) raf = requestAnimationFrame(frame)
@@ -388,17 +393,88 @@ function frame(now) {
 const wake = () => {
   if (!raf) raf = requestAnimationFrame(frame)
 }
-const onScroll = () => {
-  readScroll()
+
+// screen pixels to timeline units, so a drag moves the world with your finger
+const perPixel = () => PX / pxCss.value
+
+function onKey(e, down) {
+  if (e.altKey || e.ctrlKey || e.metaKey) return
+  const k = e.key
+  const d = k === 'ArrowRight' || k === 'd' || k === 'D' ? 1 : k === 'ArrowLeft' || k === 'a' || k === 'A' ? -1 : 0
+  if (!d || !onScreen || !inView()) return
+  if (e.target.closest?.('input, textarea, select, [contenteditable]')) return
+  e.preventDefault()
+  if (down) held.key = d
+  else if (held.key === d) held.key = 0
   wake()
 }
+const keydown = (e) => onKey(e, true)
+const keyup = (e) => onKey(e, false)
+// Most of the game has to be on screen for the arrow keys to drive it.
+function inView() {
+  const r = stage.value?.getBoundingClientRect()
+  return !!r && r.top < window.innerHeight * 0.6 && r.bottom > window.innerHeight * 0.4
+}
+
+function press(d) {
+  held.button = d
+  wake()
+}
+const release = () => (held.button = 0)
+
+function onPointerDown(e) {
+  if (e.button > 0 || e.target.closest('button')) return
+  drag = null
+  const d = { id: e.pointerId, x: e.clientX, y: e.clientY, t: t.value, lastX: e.clientX, lastT: performance.now(), v: 0, horizontal: null }
+  drag = d
+  vel = 0
+}
+function onPointerMove(e) {
+  const d = drag
+  if (!d || e.pointerId !== d.id) return
+  const dx = e.clientX - d.x
+  const dy = e.clientY - d.y
+  if (d.horizontal === null) {
+    if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return
+    d.horizontal = Math.abs(dx) > Math.abs(dy)
+    if (!d.horizontal) return (drag = null) // an up and down swipe scrolls the page as usual
+    stage.value.setPointerCapture?.(e.pointerId)
+  }
+  // Dragging left pulls the world past Lucy, so she walks forward.
+  t.value = clamp(d.t - dx * perPixel(), 0, W.TIMELINE_LENGTH)
+  const now = performance.now()
+  const ms = Math.max(1, now - d.lastT)
+  d.v = d.v * 0.6 + ((-(e.clientX - d.lastX) * perPixel()) / ms) * 1000 * 0.4
+  d.lastX = e.clientX
+  d.lastT = now
+  wake()
+}
+function onPointerUp(e) {
+  const d = drag
+  if (!d || e.pointerId !== d.id) return
+  drag = null
+  if (d.horizontal) vel = Math.max(-FLING, Math.min(FLING, d.v))
+  wake()
+}
+
+// Sideways trackpad swipes move her too. Up and down wheel movement is left to the page.
+function onWheel(e) {
+  if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+  e.preventDefault()
+  t.value = clamp(t.value + e.deltaX * perPixel() * 1.5, 0, W.TIMELINE_LENGTH)
+  vel = 0
+  wake()
+}
+
 function onResize() {
-  size.value = { w: window.innerWidth, h: window.innerHeight }
+  const el = stage.value
+  if (!el) return
+  size.value = { w: el.clientWidth, h: el.clientHeight }
   if (canvas.value) {
     canvas.value.width = cw.value
     canvas.value.height = ch.value
   }
-  onScroll()
+  wake()
 }
 
 function load(src) {
@@ -412,26 +488,30 @@ function load(src) {
 
 onMounted(async () => {
   onResize()
-  t.value = target.value
-  window.addEventListener('scroll', onScroll, { passive: true })
-  window.addEventListener('resize', onResize)
+  window.addEventListener('keydown', keydown)
+  window.addEventListener('keyup', keyup)
+  window.addEventListener('blur', release)
+  stage.value.addEventListener('wheel', onWheel, { passive: false })
+  resizer = new ResizeObserver(onResize)
+  resizer.observe(stage.value)
   observer = new IntersectionObserver(([e]) => {
     onScreen = e.isIntersecting
-    // Off screen there is nothing to watch, so catch up at once.
-    if (!onScreen) t.value = target.value
     if (onScreen) wake()
+    else held.key = held.button = 0
   })
-  observer.observe(track.value)
+  observer.observe(stage.value)
   const data = (await import('./art.json')).default
   const files = [...data.near, ...data.far, ...data.doors, data.clouds].map((f) => f.file).concat(Object.values(data.sprites).map((s) => s.file))
   for (const [src, img] of await Promise.all(files.map(load))) if (img) images[src] = img
   art.value = data
   onResize()
-  wake()
 })
 onUnmounted(() => {
-  window.removeEventListener('scroll', onScroll)
-  window.removeEventListener('resize', onResize)
+  window.removeEventListener('keydown', keydown)
+  window.removeEventListener('keyup', keyup)
+  window.removeEventListener('blur', release)
+  stage.value?.removeEventListener('wheel', onWheel)
+  resizer?.disconnect()
   observer?.disconnect()
   cancelAnimationFrame(raf)
 })
@@ -445,14 +525,37 @@ onUnmounted(() => {
       <Pearl id="journey-a" class="pearl--journey-a" />
     </div>
 
-    <div ref="track" class="journey__track" :style="{ height: trackHeight + 'px' }">
-      <div class="journey__stage" role="img" aria-label="An 8-bit video game of Lucy growing up, from an inchworm in Williamsburg to her bat mitzvah. Scroll to move her along.">
-        <canvas ref="canvas" class="journey__canvas" :style="{ width: cw * pxCss + 'px', height: ch * pxCss + 'px' }"></canvas>
-        <span v-for="l in labels" :key="l.text" class="journey__sign" :style="{ left: l.left + 'px', top: l.top + 'px', fontSize: l.font + 'px', color: l.color }" aria-hidden="true">{{ l.text }}</span>
-        <p :key="place" class="journey__place">{{ place }}</p>
-        <p class="journey__hint" :class="{ 'is-gone': t > 250 }">{{ copy.journey.hint }}</p>
-        <div class="journey__progress" aria-hidden="true"><span :style="{ width: progress * 100 + '%' }"></span></div>
-      </div>
+    <div
+      ref="stage"
+      class="journey__stage"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerUp"
+    >
+      <canvas ref="canvas" class="journey__canvas" role="img" aria-label="An 8-bit video game of Lucy growing up, from an inchworm in Williamsburg to her bat mitzvah. Hold the right arrow or the forward button to walk her along." :style="{ width: cw * pxCss + 'px', height: ch * pxCss + 'px' }"></canvas>
+      <span v-for="l in labels" :key="l.text" class="journey__sign" :style="{ left: l.left + 'px', top: l.top + 'px', fontSize: l.font + 'px', color: l.color }" aria-hidden="true">{{ l.text }}</span>
+      <p :key="place" class="journey__place">{{ place }}</p>
+      <p class="journey__hint" :class="{ 'is-gone': started }">{{ touchy ? copy.journey.hintTouch : copy.journey.hint }}</p>
+      <button
+        v-for="b in [{ d: -1, label: 'Walk back', cls: 'back' }, { d: 1, label: 'Walk forward', cls: 'fwd' }]"
+        :key="b.cls"
+        type="button"
+        class="journey__pad"
+        :class="'journey__pad--' + b.cls"
+        :aria-label="b.label"
+        @pointerdown.prevent="press(b.d)"
+        @pointerup="release"
+        @pointerleave="release"
+        @pointercancel="release"
+        @keydown.enter.prevent="press(b.d)"
+        @keydown.space.prevent="press(b.d)"
+        @keyup="release"
+        @contextmenu.prevent
+      >
+        <svg viewBox="0 0 7 7" aria-hidden="true"><path :d="b.d > 0 ? 'M2 0h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1z' : 'M5 0h-1v1h-1v1h-1v1h-1v1h1v1h1v1h1v1h1z'" /></svg>
+      </button>
+      <div class="journey__progress" aria-hidden="true"><span :style="{ width: progress * 100 + '%' }"></span></div>
     </div>
 
     <div class="zone__inner journey__outro">
