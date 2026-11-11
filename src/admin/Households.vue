@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
-import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural } from './store.js'
+import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural, addressStatus, statusLabel } from './store.js'
 import { parseCsv, rowsToHouseholds, downloadCsv } from './csv.js'
 
 const search = ref('')
@@ -15,17 +15,20 @@ const importing = reactive({ open: false, text: '', busy: false })
 const groups = computed(() => [...new Set(store.households.map((h) => h.group_tag).filter(Boolean))].sort())
 
 const stats = computed(() => {
-  const total = store.households.length
-  const withAddress = store.households.filter(hasAddress).length
-  const guests = store.households.reduce((n, h) => n + h.guests.length, 0)
-  return { total, withAddress, guests, missing: total - withAddress }
+  const count = (status) => store.households.filter((h) => addressStatus(h) === status).length
+  return {
+    total: store.households.length,
+    guests: store.households.reduce((n, h) => n + h.guests.length, 0),
+    confirmed: count('confirmed'),
+    unconfirmed: count('unconfirmed'),
+    needed: count('needed'),
+  }
 })
 
 const rows = computed(() => {
   const q = search.value.trim().toLowerCase()
   return store.households.filter((h) => {
-    if (filter.value === 'missing' && hasAddress(h)) return false
-    if (filter.value === 'has' && !hasAddress(h)) return false
+    if (['needed', 'unconfirmed', 'confirmed'].includes(filter.value) && addressStatus(h) !== filter.value) return false
     if (filter.value === 'noemail' && h.email) return false
     if (group.value && h.group_tag !== group.value) return false
     if (!q) return true
@@ -33,7 +36,8 @@ const rows = computed(() => {
   })
 })
 
-const shareLink = computed(() => window.location.origin + '/')
+const sharedForm = window.location.origin + '/address'
+const meetLucy = window.location.origin + '/'
 
 function blank() {
   return {
@@ -65,7 +69,11 @@ async function save() {
   fields.country = (e.country || '').trim() || 'United States'
 
   const before = store.households.find((h) => h.id === e.id)
-  if (!before || addressLine(before) !== addressLine({ ...fields })) fields.address_updated_at = fields.address1 ? new Date().toISOString() : null
+  // A changed address needs the guest to confirm it again.
+  if (!before || addressLine(before) !== addressLine({ ...fields })) {
+    fields.address_updated_at = fields.address1 ? new Date().toISOString() : null
+    fields.address_confirmed_at = null
+  }
 
   let id = e.id
   if (id) {
@@ -119,10 +127,10 @@ async function remove() {
 }
 
 function exportCsv() {
-  const header = ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'group', 'notes', 'personal_link']
+  const header = ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'address_status', 'group', 'notes', 'personal_link']
   const body = rows.value.map((h) => [
     h.name, h.greeting, h.guests.map((g) => [g.first_name, g.last_name].filter(Boolean).join(' ')).join('; '),
-    h.email, h.phone, h.address1, h.address2, h.city, h.state, h.postal_code, h.country, h.group_tag, h.notes, inviteLink(h),
+    h.email, h.phone, h.address1, h.address2, h.city, h.state, h.postal_code, h.country, statusLabel[addressStatus(h)], h.group_tag, h.notes, inviteLink(h),
   ])
   downloadCsv('lucy-bat-mitzvah-guest-list.csv', [header, ...body])
 }
@@ -170,22 +178,29 @@ async function runImport() {
     <div class="astats">
       <div><strong>{{ stats.total }}</strong> households</div>
       <div><strong>{{ stats.guests }}</strong> guests</div>
-      <div><strong>{{ stats.withAddress }}</strong> addresses in</div>
-      <div :class="{ 'is-warn': stats.missing }"><strong>{{ stats.missing }}</strong> still needed</div>
+      <div><strong>{{ stats.confirmed }}</strong> confirmed</div>
+      <div><strong>{{ stats.unconfirmed }}</strong> not confirmed yet</div>
+      <div :class="{ 'is-warn': stats.needed }"><strong>{{ stats.needed }}</strong> addresses needed</div>
     </div>
 
     <div class="ashare">
-      <span>Link for everyone:</span>
-      <code>{{ shareLink }}</code>
-      <button class="abtn abtn--small" @click="copyText(shareLink, 'Link copied')">Copy</button>
+      <span>Address form for anyone without a personal link:</span>
+      <code>{{ sharedForm }}</code>
+      <button class="abtn abtn--small" @click="copyText(sharedForm, 'Link copied')">Copy</button>
+    </div>
+    <div class="ashare">
+      <span>Meet Lucy page, for the save the date card:</span>
+      <code>{{ meetLucy }}</code>
+      <button class="abtn abtn--small" @click="copyText(meetLucy, 'Link copied')">Copy</button>
     </div>
 
     <div class="atools">
       <input v-model="search" class="asearch" type="search" placeholder="Search names, emails, cities" aria-label="Search the guest list" />
       <select v-model="filter" aria-label="Filter by address">
         <option value="all">Everyone</option>
-        <option value="missing">Needs an address</option>
-        <option value="has">Has an address</option>
+        <option value="needed">Address needed</option>
+        <option value="unconfirmed">Address not confirmed</option>
+        <option value="confirmed">Address confirmed</option>
         <option value="noemail">No email</option>
       </select>
       <select v-if="groups.length" v-model="group" aria-label="Filter by group">
@@ -214,8 +229,8 @@ async function runImport() {
             <td>{{ guestNames(h) || '' }}</td>
             <td>{{ h.email }}</td>
             <td>
-              <template v-if="hasAddress(h)">{{ addressLine(h) }}</template>
-              <span v-else class="achip achip--warn">Needed</span>
+              <template v-if="hasAddress(h)">{{ addressLine(h) }}<br /></template>
+              <span class="achip" :class="'achip--' + addressStatus(h)">{{ statusLabel[addressStatus(h)] }}</span>
             </td>
             <td>{{ h.group_tag }}</td>
             <td><button class="abtn abtn--small" @click.stop="copyText(inviteLink(h), 'Personal link copied')">Copy link</button></td>

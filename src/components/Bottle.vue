@@ -2,7 +2,6 @@
 import { onMounted, reactive, ref } from 'vue'
 import { copy } from '../content.js'
 import { supabase, friendlyError } from '../lib/supabase.js'
-import { invite } from '../lib/state.js'
 import Pearl from './Pearl.vue'
 
 const form = reactive({ name: '', message: '', website: '' })
@@ -27,7 +26,6 @@ async function send() {
   const { error: err } = await supabase.rpc('send_bottle', {
     p_name: form.name,
     p_message: form.message,
-    p_token: invite.token || null,
   })
   if (err) {
     error.value = friendlyError(err)

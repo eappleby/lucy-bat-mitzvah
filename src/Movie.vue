@@ -6,7 +6,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { event, photos, photoSrc } from './content.js'
 import './styles/movie.css'
 
-const order = ['beach-sunset', 'big-jump', 'giant-boba', 'camp-mud', 'orange-gates', 'costume-crew', 'ball-pit', 'block-party', 'boogie-board']
+const order = ['big-jump', 'giant-boba', 'camp-mud', 'orange-gates', 'costume-crew', 'ball-pit', 'block-party', 'boogie-board', 'pink-jacket']
 const reel = order.map((id) => photos.find((p) => p.id === id)).filter(Boolean)
 
 const cardArt = [

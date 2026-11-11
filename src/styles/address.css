@@ -1,0 +1,154 @@
+/* The address page: one sheet of save the date paper with the card's art around it. */
+.ap {
+  min-height: 100svh;
+  padding: clamp(0.75rem, 3vw, 2.5rem) 1rem;
+  background: linear-gradient(180deg, #d9f3fb 0%, #a8e2f2 45%, #62c4e7 100%);
+}
+.ap-card {
+  position: relative;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: clamp(6.5rem, 20vw, 8.5rem) clamp(1.25rem, 6vw, 3.25rem) clamp(9rem, 26vw, 11rem);
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 18px 40px rgba(0, 45, 120, 0.22);
+  overflow: hidden;
+  text-align: center;
+}
+
+.ap-art {
+  position: absolute;
+  pointer-events: none;
+  animation: ap-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.ap-art--coral { top: -14px; left: -16px; width: clamp(130px, 34%, 210px); }
+.ap-art--turtle { top: 14px; right: 18%; width: clamp(80px, 22%, 135px); animation-delay: 0.15s; }
+.ap-art--star { top: 6px; right: 4px; width: clamp(54px, 14%, 90px); animation-delay: 0.25s; }
+.ap-art--shell { bottom: 6px; left: 6px; width: clamp(80px, 21%, 130px); animation-delay: 0.3s; }
+.ap-art--weed { bottom: 4px; left: 27%; width: clamp(96px, 26%, 160px); animation-delay: 0.4s; }
+.ap-art--coral2 { bottom: -10px; right: -8px; width: clamp(96px, 26%, 160px); animation-delay: 0.5s; }
+@keyframes ap-pop {
+  from { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+}
+
+.ap-head { position: relative; z-index: 1; }
+.ap-whose {
+  margin: 0;
+  font-size: clamp(1.7rem, 7vw, 2.4rem);
+  line-height: 1;
+  transform: rotate(-3deg);
+}
+.ap-title {
+  margin: 0.25rem 0 0;
+  font-size: clamp(2.6rem, 12.5vw, 4.6rem);
+  font-weight: 520;
+  font-variation-settings: 'BNCE' 0, 'INFM' 100, 'SPAC' 0;
+  text-transform: uppercase;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+}
+.ap-soon {
+  margin: 0.3rem 0 0;
+  font-size: clamp(1.6rem, 6.5vw, 2.2rem);
+  color: var(--coral);
+  transform: rotate(-2deg);
+}
+.ap-wave { width: 160px; margin: 0.5rem auto 0.3rem; }
+
+.ap-body {
+  position: relative;
+  z-index: 1;
+  margin-top: 1.5rem;
+}
+.ap-intro { margin: 0 auto 1rem; max-width: 30rem; font-size: 1.3rem; }
+.ap-done .ap-intro { margin-bottom: 0.4rem; }
+.ap-note { margin: 0 auto 1rem; max-width: 30rem; font-size: 1.2rem; color: #33507e; }
+.ap-q {
+  margin: 0 0 1rem;
+  font-size: clamp(1.7rem, 6.5vw, 2.2rem);
+  transform: rotate(-1deg);
+}
+
+/* The address on file, written on a little envelope. */
+.ap-envelope {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+  max-width: 24rem;
+  margin: 0 auto 1.4rem;
+  padding: 1.1rem 2.9rem 1.2rem;
+  background: var(--pearl);
+  border: 3px solid var(--ink);
+  border-radius: var(--wobble);
+  font-style: normal;
+  font-size: 1.35rem;
+  line-height: 1.3;
+  transform: rotate(0.8deg);
+}
+.ap-envelope strong {
+  margin-bottom: 0.2rem;
+  font-family: var(--display);
+  font-weight: 650;
+  font-size: 1.3rem;
+}
+.ap-envelope::after {
+  /* A stamp in the corner. */
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 24px;
+  height: 29px;
+  background: var(--coral);
+  border: 3px dotted #fff;
+  outline: 2px solid var(--coral);
+  transform: rotate(6deg);
+}
+.ap-choice {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+.ap-choice .btn { min-width: 7.5rem; justify-content: center; }
+.ap-no { box-shadow: 4px 5px 0 var(--coral); }
+.ap-no:hover { box-shadow: 6px 8px 0 var(--coral); }
+
+.ap-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  text-align: left;
+}
+.ap-form > p,
+.ap-form > h2 { grid-column: 1 / -1; text-align: center; }
+.ap-form .field { grid-column: span 2; }
+.ap-form .field--small { grid-column: span 1; }
+.ap-form .field--wide { grid-column: 1 / -1; }
+.ap-form .btn { justify-content: center; margin-top: 0.3rem; }
+
+.ap-done__turtle { width: 140px; margin: 0 auto 0.5rem; animation: bob 4s ease-in-out infinite; }
+.ap-link {
+  margin-top: 0.3rem;
+  padding: 0.2rem 0.4rem;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  font-size: 1.15rem;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+@keyframes bob {
+  50% { translate: 0 -10px; }
+}
+
+@media (max-width: 520px) {
+  .ap-form .field { grid-column: 1 / -1; }
+  .ap-form .field--small { grid-column: span 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-art, .ap-done__turtle { animation: none; }
+}

@@ -59,6 +59,13 @@ export async function loadAll() {
 
 export const hasAddress = (h) => !!(h.address1 && h.address1.trim())
 
+// needed: no address yet. unconfirmed: we have one but the guest has not said yes. confirmed: the guest said yes or sent it.
+export function addressStatus(h) {
+  if (!hasAddress(h)) return 'needed'
+  return h.address_confirmed_at ? 'confirmed' : 'unconfirmed'
+}
+export const statusLabel = { needed: 'Needed', unconfirmed: 'Not confirmed', confirmed: 'Confirmed' }
+
 export function addressLine(h) {
   if (!hasAddress(h)) return ''
   const cityLine = [h.city, [h.state, h.postal_code].filter(Boolean).join(' ')].filter(Boolean).join(', ')

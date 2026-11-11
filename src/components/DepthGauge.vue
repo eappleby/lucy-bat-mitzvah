@@ -4,6 +4,8 @@ import { onMounted, onUnmounted, ref } from 'vue'
 const depth = ref(0)
 const zone = ref('The surface')
 const progress = ref(0)
+// The cartoon fills the screen, so the gauge steps aside while it plays.
+const inJourney = ref(false)
 const MAX_DEPTH = 200
 let raf = 0
 
@@ -21,6 +23,11 @@ function measure() {
     if (el.getBoundingClientRect().top < window.innerHeight * 0.5) current = el.dataset.zone
   }
   zone.value = current
+  const stage = document.querySelector('.journey__track')
+  if (stage) {
+    const r = stage.getBoundingClientRect()
+    inJourney.value = r.top < window.innerHeight * 0.5 && r.bottom > window.innerHeight * 0.5
+  }
 }
 
 function onScroll() {
@@ -39,7 +46,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <aside class="gauge" :class="{ 'is-under': depth > 0 }" aria-label="Depth gauge">
+  <aside class="gauge" :class="{ 'is-under': depth > 0 && !inJourney }" aria-label="Depth gauge">
     <div class="gauge__track" aria-hidden="true">
       <span class="gauge__diver" :style="{ top: progress * 100 + '%' }"></span>
     </div>

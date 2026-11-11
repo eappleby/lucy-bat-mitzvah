@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { event } from '../content.js'
-import { invite } from '../lib/state.js'
 
 const ready = ref(false)
 const now = ref(Date.now())
@@ -51,7 +50,6 @@ function dive() {
     />
 
     <div class="hero-center">
-      <p v-if="invite.greeting" class="hero-ahoy">Ahoy, {{ invite.greeting }}!</p>
       <p class="hero-whose">{{ event.whose }}</p>
       <h1 class="hero-title" :aria-label="event.title.join(' ')">
         <span v-for="(word, w) in words" :key="w" class="hero-word" aria-hidden="true">

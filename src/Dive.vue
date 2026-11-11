@@ -1,24 +1,17 @@
 <script setup>
-import { onMounted, watch } from 'vue'
-import { loadInvite } from './lib/state.js'
+// The "Meet Lucy" page at /. The save the date card links here.
 import './styles/dive.css'
 import Hero from './components/Hero.vue'
 import Shallows from './components/Shallows.vue'
 import Reef from './components/Reef.vue'
-import Cinema from './components/Cinema.vue'
-import Sketchbook from './components/Sketchbook.vue'
+import Journey from './components/journey/Journey.vue'
 import Bottle from './components/Bottle.vue'
-import SeaFloor from './components/SeaFloor.vue'
+import Finale from './components/Finale.vue'
 import DepthGauge from './components/DepthGauge.vue'
 import TurtleBuddy from './components/TurtleBuddy.vue'
 import PearlCounter from './components/PearlCounter.vue'
 import Lightbox from './components/Lightbox.vue'
 import Bubbles from './components/Bubbles.vue'
-
-const props = defineProps({ token: { type: String, default: '' } })
-
-onMounted(() => loadInvite(props.token))
-watch(() => props.token, (t) => loadInvite(t))
 </script>
 
 <template>
@@ -28,10 +21,9 @@ watch(() => props.token, (t) => loadInvite(t))
       <Bubbles />
       <Shallows />
       <Reef />
-      <Cinema />
-      <Sketchbook />
+      <Journey />
       <Bottle />
-      <SeaFloor />
+      <Finale />
     </main>
     <DepthGauge />
     <PearlCounter />

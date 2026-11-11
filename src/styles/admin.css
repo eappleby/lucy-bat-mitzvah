@@ -170,7 +170,7 @@
 .ahint { margin: 0 0 1rem; color: #4a6590; max-width: 70ch; }
 .astats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.7rem;
 }
 .astats > div {
@@ -379,10 +379,39 @@
   .abar__brand span { display: none; }
   .abar__tabs { order: 3; flex-basis: 100%; }
   .astats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .astats > div:first-child { grid-column: 1 / -1; }
   .agrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .afield--3 { grid-column: 1 / -1; }
   .acard { flex-direction: column; }
   .acard__actions { align-items: flex-start; max-width: none; }
   .acard__row, .acard__suggest { justify-content: flex-start; }
   .aguest { grid-template-columns: 1fr 1fr; }
+}
+
+/* Email tab: settings and list on the left, live preview on the right. */
+.aemail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 470px);
+  gap: 1.25rem;
+  align-items: start;
+}
+.aemail__preview {
+  position: sticky;
+  top: 70px;
+}
+.aemail__preview h3 { margin-top: 0; }
+.aemail__frame {
+  width: 100%;
+  height: min(78vh, 900px);
+  background: #d9f3fb;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+}
+.atable tr.is-previewed { background: #eaf5fc; }
+.achip--confirmed { background: #d7f1e6; color: #0a5f4c; }
+.achip--unconfirmed { background: #e6eef7; color: #33507e; }
+.achip--needed { background: #ffe9c4; color: #8a5200; }
+@media (max-width: 980px) {
+  .aemail { grid-template-columns: minmax(0, 1fr); }
+  .aemail__preview { position: static; }
 }

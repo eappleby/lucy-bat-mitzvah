@@ -11,55 +11,88 @@ export const event = {
 }
 
 export const copy = {
+  // The personal address page (/i/<token>) and the shared one (/address).
+  address: {
+    comingSoon: 'is coming soon!',
+    confirmQuestion: 'Is this your address?',
+    yes: 'Yes',
+    no: 'No',
+    formHeading: 'Where should we mail it?',
+    send: 'Send my address',
+    sending: 'Sending',
+    thanksHeading: 'Thank you!',
+    thanksBody: "We'll mail it to {city}.",
+    change: 'Change my address',
+    unknownLink: "We don't recognize this link, but you can still send your address here.",
+  },
   shallows: {
     heading: "Hi, I'm Lucy!",
     body: [
       "I'm becoming a bat mitzvah on March 20, 2027, and I want you there.",
-      'Keep swimming down. There are photos to pop, a sketchbook to peek at, and 7 pearls hiding on the way to the sea floor.',
+      'Scroll down to see how I got here. There are 7 pearls hiding on the way.',
     ],
+    timelineHeading: 'Me, over the years',
   },
-  reef: { heading: 'The reef crew', body: 'My favorite people. Pop a bubble to see who is inside.' },
-  cinema: { heading: 'Lucy, so far', body: 'A very short movie.' },
-  sketchbook: {
-    heading: "Lucy's sketchbook",
-    body: 'Drawings, stories, and ideas, straight from me.',
-    empty: 'Lucy is still filling these pages. Swim back soon.',
+  reef: { heading: 'The reef crew', body: 'My friends. Pop a bubble to see who is inside.' },
+  journey: {
+    heading: 'How I got here',
+    body: 'Keep scrolling and I will walk you through it.',
+    hint: 'Scroll to walk',
   },
   bottle: {
     heading: 'Message in a bottle',
     body: 'Write Lucy a note and toss it in. She reads every one.',
   },
-  floor: {
-    heading: 'You made it to the sea floor!',
-    body: 'One last thing. A save the date is swimming your way, and the turtle needs to know where to deliver it.',
-    known: 'We already have an address for you. Moved? Send the new one.',
+  finale: {
+    heading: 'Invitation to follow.',
+    body: 'Stay tuned!',
   },
 }
 
-// pos is the CSS object-position used when a photo is cropped into a circle.
-export const photos = [
-  { id: 'beach-sunset', caption: 'Sunset swim', pos: '50% 28%' },
-  { id: 'boogie-board', caption: 'Catching a wave', pos: '82% 75%' },
-  { id: 'ball-pit', caption: 'Deep in the ball pit', pos: '50% 30%' },
+// pos is the CSS object-position used when a photo is cropped to a square or circle.
+
+// The big picture next to "Hi, I'm Lucy!".
+export const mainPhoto = { id: 'orange-gates', caption: 'A thousand orange gates', pos: '50% 38%' }
+
+// Lucy over the years, youngest first.
+export const timeline = [
+  { id: 'baby-bouncer', caption: 'Baby Lucy', pos: '45% 35%' },
+  { id: 'toddler-curls', caption: 'Curls!', pos: '50% 40%' },
+  { id: 'teal-dress', caption: 'Hi there', pos: '45% 32%' },
+  { id: 'swim-goggles', caption: 'Ready to swim', pos: '50% 30%' },
+  { id: 'helmet-hug', caption: 'Bike day with Mom', pos: '62% 35%' },
+  { id: 'giant-boba', caption: 'Biggest boba ever', pos: '22% 42%' },
+  { id: 'pink-jacket', caption: 'Almost 13', pos: '50% 30%' },
+]
+
+// The reef crew: friends only.
+export const friends = [
+  { id: 'couch-four', caption: 'The original crew', pos: '50% 40%' },
+  { id: 'art-class', caption: 'Art class', pos: '62% 30%' },
+  { id: 'sidewalk-chalk', caption: 'Sidewalk chalk', pos: '45% 45%' },
+  { id: 'kimonos', caption: 'Kimono day', pos: '50% 40%' },
+  { id: 'ice-cream-bench', caption: 'Ice cream break', pos: '40% 45%' },
+  { id: 'jersey-day', caption: 'Jersey day', pos: '50% 25%' },
+  { id: 'class-project', caption: 'Class project', pos: '50% 30%' },
   { id: 'big-jump', caption: 'Jump!', pos: '50% 50%' },
-  { id: 'orange-gates', caption: 'A thousand orange gates', pos: '50% 48%' },
-  { id: 'sidewalk-trio', caption: 'Fall dance break', pos: '50% 35%' },
-  { id: 'giant-boba', caption: 'Biggest boba ever', pos: '22% 45%' },
-  { id: 'camp-mud', caption: 'Mud day at camp', pos: '50% 40%' },
+  { id: 'skate-crew', caption: 'Skate crew', pos: '50% 30%' },
+  { id: 'rink-hug', caption: 'Rink hugs', pos: '50% 30%' },
   { id: 'costume-crew', caption: 'Costume crew', pos: '50% 40%' },
-  { id: 'peace-signs', caption: 'Double peace', pos: '50% 30%' },
-  { id: 'subway', caption: 'Subway ride', pos: '45% 40%' },
-  { id: 'pizza', caption: 'Pizza night', pos: '55% 35%' },
   { id: 'group-hug', caption: 'Group hug', pos: '50% 42%' },
-  { id: 'kimonos', caption: 'Kimono day', pos: '50% 45%' },
-  { id: 'block-party', caption: 'Block party', pos: '50% 40%' },
-  { id: 'italian-ice', caption: 'Icy treat', pos: '50% 22%' },
   { id: 'floor-pile', caption: 'Pile up', pos: '50% 50%' },
-  { id: 'braids-walk', caption: 'Braids and backpacks', pos: '50% 32%' },
-  { id: 'cave', caption: 'Lost in a cave', pos: '40% 38%' },
+  { id: 'camp-mud', caption: 'Mud day at camp', pos: '50% 40%' },
+  { id: 'block-party', caption: 'Block party', pos: '50% 40%' },
+  { id: 'sidewalk-trio', caption: 'Fall dance break', pos: '50% 35%' },
   { id: 'halloween-night', caption: 'Halloween night', pos: '50% 45%' },
-  { id: 'city-walk', caption: 'Out on the town', pos: '55% 38%' },
-  { id: 'pink-jacket', caption: 'Smile!', pos: '50% 30%' },
+]
+
+// Every photo on the site, for looking one up by id (the movie uses this).
+export const photos = [
+  mainPhoto,
+  ...timeline,
+  ...friends,
+  { id: 'ball-pit', caption: 'Deep in the ball pit', pos: '50% 30%' },
+  { id: 'boogie-board', caption: 'Catching a wave', pos: '82% 75%' },
 ]
 
 export const photoSrc = (id) => `/photos/${id}.webp`

@@ -1,17 +1,16 @@
 <script setup>
 import { ref } from 'vue'
-import { copy, photos, photoThumb } from '../content.js'
+import { copy, friends, photoThumb } from '../content.js'
 import { openLightbox } from '../lib/state.js'
 import Pearl from './Pearl.vue'
 
-const crew = photos.slice(3)
 const sizes = [1.25, 0.9, 1.1, 0.8, 1.35, 0.95, 1.15, 0.85, 1.2, 1, 0.9, 1.3, 0.85, 1.1, 0.95, 1.2, 0.8, 1.05, 0.9]
 const popping = ref(-1)
 
 function pop(i) {
   popping.value = i
   setTimeout(() => {
-    openLightbox(crew, i)
+    openLightbox(friends, i)
     popping.value = -1
   }, 260)
 }
@@ -26,7 +25,7 @@ function pop(i) {
       <p class="zone__body">{{ copy.reef.body }}</p>
       <div class="bubbles">
         <button
-          v-for="(p, i) in crew"
+          v-for="(p, i) in friends"
           :key="p.id"
           class="bubble"
           :class="{ 'is-popping': popping === i }"

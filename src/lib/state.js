@@ -1,21 +1,4 @@
 import { reactive, ref, watch } from 'vue'
-import { supabase } from './supabase.js'
-
-// Who this visit is for, when they arrived by a personal link (/i/<token>).
-export const invite = reactive({ token: '', greeting: '', hasAddress: false })
-
-export async function loadInvite(token) {
-  invite.token = ''
-  invite.greeting = ''
-  invite.hasAddress = false
-  if (!token) return
-  const { data } = await supabase.rpc('get_invite', { p_token: token })
-  if (data) {
-    invite.token = token
-    invite.greeting = data.greeting || ''
-    invite.hasAddress = !!data.has_address
-  }
-}
 
 // Pearl hunt. Found pearls are remembered on this device only.
 export const PEARL_TOTAL = 7
