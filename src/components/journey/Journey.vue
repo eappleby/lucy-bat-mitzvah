@@ -19,9 +19,9 @@ import './journey.css'
 const PX = 8
 const G = W.GROUND
 // Walking: holding left or right moves Lucy at a steady pace, easing in and out.
-const WALK = 620 // timeline units a second
-const ACCEL = 2600 // how quickly she gets up to speed and stops
-const FLING = 1800 // fastest a swipe can send her
+const WALK = 360 // timeline units a second, a gentle stroll
+const ACCEL = 1500 // how quickly she gets up to speed and stops
+const FLING = 1200 // fastest a swipe can send her
 
 const art = shallowRef(null)
 const images = {}
@@ -33,12 +33,12 @@ const started = ref(false) // hides the hint once someone moves her
 const clock = ref(0) // seconds, for blinking, waving and drifting clouds
 const size = ref({ w: 1200, h: 800 })
 
-// Each art pixel is a whole number of screen pixels, so pixels never smear.
+// Each art pixel is a whole number of screen pixels (S), so pixels never smear.
+// The canvas itself is full screen resolution, so the world can slide by single screen
+// pixels instead of jumping a whole art pixel at a time.
 const pxCss = computed(() => Math.max(2, Math.floor(PX * Math.min(size.value.h / 1000, size.value.w / 560))))
-const cw = computed(() => Math.ceil(size.value.w / pxCss.value))
-const ch = computed(() => Math.ceil(size.value.h / pxCss.value))
-const worldTop = computed(() => ch.value - W.WORLD_H / PX)
-const lucyCol = computed(() => Math.round(cw.value * (size.value.w < 700 ? 0.42 : 0.34)))
+const worldTop = computed(() => size.value.h - (W.WORLD_H / PX) * pxCss.value) // screen px
+const lucyScreen = computed(() => Math.round(size.value.w * (size.value.w < 700 ? 0.42 : 0.34)))
 const touchy = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
 
 const st = computed(() => W.stateAt(t.value))
@@ -46,16 +46,10 @@ const camX = computed(() => st.value.x)
 const place = computed(() => W.placeAt(camX.value))
 const progress = computed(() => Math.min(1, t.value / W.TIMELINE_LENGTH))
 
-// world x, y to canvas pixels
-const sx = (x) => lucyCol.value + Math.round(x / PX) - Math.round(camX.value / PX)
-const sy = (y) => worldTop.value + Math.round(y / PX)
-
-const labels = computed(() => {
-  if (!art.value) return []
-  return art.value.labels
-    .filter((l) => Math.abs(l.x - camX.value) < (cw.value * PX) + 400)
-    .map((l) => ({ ...l, left: sx(l.x) * pxCss.value, top: sy(l.y) * pxCss.value, font: Math.max(8, Math.round(pxCss.value * 1.8 * (l.size / 36))) }))
-})
+// world x, y to screen pixels on the canvas. Each thing rounds on its own, so Lucy (who
+// moves with the camera) never wobbles, and the world glides past her smoothly.
+const sx = (x) => lucyScreen.value + Math.round(((x - camX.value) / PX) * pxCss.value)
+const sy = (y) => worldTop.value + Math.round((y / PX) * pxCss.value)
 
 // ---------- helpers ----------
 const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v))
@@ -237,40 +231,72 @@ function scene() {
 }
 
 // ---------- drawing ----------
+// Every picture is drawn in art pixels under a transform that scales by S and moves the
+// origin to a whole screen pixel, so it stays crisp wherever it lands.
+function at(ctx, x, y) {
+  const S = pxCss.value
+  ctx.setTransform(S, 0, 0, S, x, y)
+}
+
 function drawSprite(ctx, s) {
   const meta = art.value.sprites[s.name]
   const img = images[meta.file]
   if (!img) return
+  if (s.alpha !== undefined && s.alpha < 0.02) return
   const list = meta.index[s.pose] || meta.index.all || meta.index.idle
   const frame = list[Math.max(0, s.i) % list.length]
-  const left = sx(s.x) - (s.center ? Math.round(meta.w / 2) : meta.ax)
-  const top = sy(s.y) - (s.center ? Math.round(meta.h / 2) : meta.ay) - (s.lift || 0)
-  if (s.alpha !== undefined && s.alpha < 0.02) return
+  at(ctx, sx(s.x), sy(s.y))
   ctx.globalAlpha = s.alpha ?? 1
   if (s.shadow !== false && !s.center) {
     ctx.fillStyle = 'rgba(11, 42, 85, 0.22)'
-    ctx.fillRect(sx(s.x) - 5, sy(s.y) + 1, 11, 1)
+    ctx.fillRect(-5, 1, 11, 1)
   }
+  const left = s.center ? -Math.round(meta.w / 2) : -meta.ax
+  const top = (s.center ? -Math.round(meta.h / 2) : -meta.ay) - (s.lift || 0)
   ctx.drawImage(img, frame * meta.w, 0, meta.w, meta.h, left, top, meta.w, meta.h)
   ctx.globalAlpha = 1
 }
 
+// A one art pixel wide line, from the current origin, in art pixels.
 function line(ctx, x0, y0, x1, y1, color) {
   ctx.fillStyle = color
   const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1)
   for (let k = 0; k <= n; k++) ctx.fillRect(Math.round(x0 + ((x1 - x0) * k) / n), Math.round(y0 + ((y1 - y0) * k) / n), 1, 1)
 }
 
+// Signs and shop names, painted in the game font. Most go behind the people; the ones on
+// a building Lucy walks through go with that building, in front of her.
+function drawLabel(ctx, l) {
+  const S = pxCss.value
+  const fontPx = Math.max(8, Math.round(S * 1.8 * (l.size / 36)))
+  const x = sx(l.x)
+  if (x < -300 || x > size.value.w + 300) return
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.font = `${fontPx}px "Press Start 2P"`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  const y = sy(l.y)
+  ctx.fillStyle = '#1b1d3a'
+  ctx.fillText(l.text, x + 2, y + 2)
+  ctx.fillStyle = l.color
+  ctx.fillText(l.text, x, y)
+}
+const onDoor = (l) => art.value.doors.some((d) => l.x >= d.x && l.x <= d.x + d.w)
+
 function draw() {
   const el = canvas.value
   if (!el || !art.value) return
   const ctx = el.getContext('2d')
   ctx.imageSmoothingEnabled = false
-  const w = cw.value
-  const h = ch.value
+  const S = pxCss.value
+  const w = size.value.w
+  const h = size.value.h
   const x = camX.value
+  const top = worldTop.value
+  const visible = (left, width) => left < w && left + width * S > 0
 
   // sky in flat bands, the way old games faded a sky
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
   const sky = W.skyAt(x)
   const bands = 8
   for (let b = 0; b < bands; b++) {
@@ -283,70 +309,91 @@ function draw() {
   const indoors = clamp((x - 15150) / 250)
   if (cl && indoors < 1) {
     ctx.globalAlpha = 1 - indoors
-    const cwid = art.value.clouds.w / PX
-    const off = Math.round(x / PX * 0.12 + (reducedMotion ? 0 : clock.value * 0.9)) % cwid
-    for (let cx = -off; cx < w; cx += cwid) ctx.drawImage(cl, cx, worldTop.value)
+    const span = (art.value.clouds.w / PX) * S
+    const off = ((((x / PX) * 0.12 + (reducedMotion ? 0 : clock.value * 0.9)) * S) % span + span) % span
+    for (let cx = -Math.round(off); cx < w; cx += span) {
+      at(ctx, cx, top)
+      ctx.drawImage(cl, 0, 0)
+    }
     ctx.globalAlpha = 1
   }
 
-  // far scenery for this stretch of the trip
+  // far scenery for this stretch of the trip, sliding slower than the street
   const P = art.value.parallax
   for (const f of art.value.far) {
     const a = clamp(1 - Math.max(0, f.from - x, x - f.to) / 450)
     const img = images[f.file]
     if (a <= 0 || !img) continue
+    const left = lucyScreen.value + Math.round(((f.x - (x * P + art.value.farOffset)) / PX) * S)
+    if (!visible(left, f.w / PX)) continue
     ctx.globalAlpha = a
-    ctx.drawImage(img, lucyCol.value + Math.round((f.x - (x * P + art.value.farOffset)) / PX), worldTop.value)
+    at(ctx, left, top)
+    ctx.drawImage(img, 0, 0)
   }
   ctx.globalAlpha = 1
 
   // near scenery
   for (const tile of art.value.near) {
+    const img = images[tile.file]
     const left = sx(tile.x)
-    if (left > w || left + tile.w / PX < 0 || !images[tile.file]) continue
+    if (!img || !visible(left, tile.w / PX)) continue
+    at(ctx, left, top)
     // on screens taller than the world, stretch a row near the top upward so indoor walls reach the ceiling
-    if (worldTop.value > 0) ctx.drawImage(images[tile.file], 0, 2, tile.w / PX, 1, left, 0, tile.w / PX, worldTop.value)
-    ctx.drawImage(images[tile.file], left, worldTop.value)
+    if (top > 0) ctx.drawImage(img, 0, 2, tile.w / PX, 1, 0, -top / S, tile.w / PX, top / S)
+    ctx.drawImage(img, 0, 0)
   }
 
   const s = scene()
   for (const b of s.back) {
     if (b.kind === 'swing') {
-      const [px, py, sx0, sy0] = [sx(b.px), sy(b.py), sx(b.seat[0]), sy(b.seat[1])]
-      line(ctx, px - 4, py, sx0 - 4, sy0, '#5d6575')
-      line(ctx, px + 4, py, sx0 + 4, sy0, '#5d6575')
+      at(ctx, sx(b.px), sy(b.py))
+      const dx = Math.round((b.seat[0] - b.px) / PX)
+      const dy = Math.round((b.seat[1] - b.py) / PX)
+      line(ctx, -4, 0, dx - 4, dy, '#5d6575')
+      line(ctx, 4, 0, dx + 4, dy, '#5d6575')
       ctx.fillStyle = '#1b1d3a'
-      ctx.fillRect(sx0 - 6, sy0 - 1, 13, 3)
+      ctx.fillRect(dx - 6, dy - 1, 13, 3)
       ctx.fillStyle = '#1f9fe0'
-      ctx.fillRect(sx0 - 5, sy0, 11, 1)
+      ctx.fillRect(dx - 5, dy, 11, 1)
     } else if (b.kind === 'case') {
-      if (b.hand) line(ctx, sx(b.x) + 3, sy(G) - 13, sx(b.hand[0]), sy(b.hand[1]), '#3a3f4a')
+      if (b.hand) {
+        at(ctx, sx(b.x), sy(G))
+        line(ctx, 3, -13, Math.round((b.hand[0] - b.x) / PX), Math.round((b.hand[1] - G) / PX), '#3a3f4a')
+      }
       drawSprite(ctx, { name: 'suitcase', pose: 'all', i: 0, x: b.x, y: G })
     } else if (b.kind === 'painting') {
-      const left = sx(b.x) - 6
-      const top = sy(G - 236) + 2
+      at(ctx, sx(b.x), sy(G - 236))
       const total = b.painting.strokes.reduce((n, st) => n + st.length, 0)
-      let left2 = Math.round(total * b.p)
+      let left = Math.round(total * b.p)
       b.painting.strokes.forEach((st, k) => {
         ctx.fillStyle = b.painting.c[k]
-        for (const [px, py] of st) if (left2-- > 0) ctx.fillRect(left + px, top + py, 1, 1)
+        for (const [px, py] of st) if (left-- > 0) ctx.fillRect(px - 6, py + 2, 1, 1)
       })
     }
   }
+
+  for (const l of art.value.labels) if (!onDoor(l)) drawLabel(ctx, l)
+
   for (const sp of s.sprites) drawSprite(ctx, sp)
   for (const f of s.front) {
     if (f.kind === 'disco') {
-      line(ctx, sx(f.x), 0, sx(f.x), sy(170), '#5d6575')
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.fillStyle = '#5d6575'
+      ctx.fillRect(sx(f.x), 0, S, sy(170))
       drawSprite(ctx, { name: 'disco', pose: 'all', i: Math.floor(clock.value * 3) % 2, x: f.x, y: 230, shadow: false })
     } else drawSprite(ctx, { ...f, pose: 'all', shadow: false })
   }
 
-  // buildings Lucy walks through go in front of her
+  // buildings Lucy walks through go in front of her, with their signs
   for (const d of art.value.doors) {
+    const img = images[d.file]
     const left = sx(d.x)
-    if (left > w || left + d.w / PX < 0 || !images[d.file]) continue
-    ctx.drawImage(images[d.file], left, worldTop.value)
+    if (!img || !visible(left, d.w / PX)) continue
+    at(ctx, left, top)
+    ctx.drawImage(img, 0, 0)
   }
+  for (const l of art.value.labels) if (onDoor(l)) drawLabel(ctx, l)
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
 }
 
 const hex = (h) => (h.startsWith('rgb') ? h.match(/\d+/g).map(Number) : [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)))
@@ -365,6 +412,7 @@ let onScreen = false
 let observer
 let resizer
 let vel = 0
+let lastFrameT = 0
 const held = { key: 0, button: 0 }
 let drag = null // { id, x, y, t, lastX, lastT, v, horizontal }
 
@@ -374,7 +422,8 @@ function frame(now) {
   raf = 0
   const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016
   last = now
-  const before = t.value
+  // Measured from the last frame, so drags and trackpad swipes count as walking too.
+  const before = lastFrameT
   if (!drag) {
     const want = dir() * WALK
     const step = ACCEL * dt
@@ -383,6 +432,7 @@ function frame(now) {
     if (t.value === 0 || t.value === W.TIMELINE_LENGTH) vel = 0
   }
   const v = Math.abs(t.value - before) / dt
+  lastFrameT = t.value
   speed.value += (Math.min(v, 900) - speed.value) * Math.min(1, dt * 10)
   if (v > 1) started.value = true
   clock.value += dt
@@ -471,8 +521,8 @@ function onResize() {
   if (!el) return
   size.value = { w: el.clientWidth, h: el.clientHeight }
   if (canvas.value) {
-    canvas.value.width = cw.value
-    canvas.value.height = ch.value
+    canvas.value.width = size.value.w
+    canvas.value.height = size.value.h
   }
   wake()
 }
@@ -500,11 +550,18 @@ onMounted(async () => {
     else held.key = held.button = 0
   })
   observer.observe(stage.value)
+  try {
+    await document.fonts.load('16px "Press Start 2P"') // the signs are painted in it
+  } catch {
+    // Signs fall back to another font.
+  }
   const data = (await import('./art.json')).default
   const files = [...data.near, ...data.far, ...data.doors, data.clouds].map((f) => f.file).concat(Object.values(data.sprites).map((s) => s.file))
   for (const [src, img] of await Promise.all(files.map(load))) if (img) images[src] = img
   art.value = data
   onResize()
+  // For screenshot scripts in development only: jump to a point on the timeline.
+  if (import.meta.env.DEV) window.__journey = { go: (v) => ((t.value = lastFrameT = v), (vel = 0), wake()) }
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', keydown)
@@ -525,6 +582,8 @@ onUnmounted(() => {
       <Pearl id="journey-a" class="pearl--journey-a" />
     </div>
 
+    <!-- The hold: the game sticks in place while the page scrolls past it for a moment. -->
+    <div class="journey__hold">
     <div
       ref="stage"
       class="journey__stage"
@@ -533,8 +592,7 @@ onUnmounted(() => {
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
     >
-      <canvas ref="canvas" class="journey__canvas" role="img" aria-label="An 8-bit video game of Lucy growing up, from an inchworm in Williamsburg to her bat mitzvah. Hold the right arrow or the forward button to walk her along." :style="{ width: cw * pxCss + 'px', height: ch * pxCss + 'px' }"></canvas>
-      <span v-for="l in labels" :key="l.text" class="journey__sign" :style="{ left: l.left + 'px', top: l.top + 'px', fontSize: l.font + 'px', color: l.color }" aria-hidden="true">{{ l.text }}</span>
+      <canvas ref="canvas" class="journey__canvas" role="img" aria-label="An 8-bit video game of Lucy growing up, from an inchworm in Williamsburg to her bat mitzvah. Hold the right arrow or the forward button to walk her along."></canvas>
       <p :key="place" class="journey__place">{{ place }}</p>
       <p class="journey__hint" :class="{ 'is-gone': started }">{{ touchy ? copy.journey.hintTouch : copy.journey.hint }}</p>
       <button
@@ -556,6 +614,7 @@ onUnmounted(() => {
         <svg viewBox="0 0 7 7" aria-hidden="true"><path :d="b.d > 0 ? 'M2 0h1v1h1v1h1v1h1v1h-1v1h-1v1h-1v1h-1z' : 'M5 0h-1v1h-1v1h-1v1h-1v1h1v1h1v1h1v1h1z'" /></svg>
       </button>
       <div class="journey__progress" aria-hidden="true"><span :style="{ width: progress * 100 + '%' }"></span></div>
+    </div>
     </div>
 
     <div class="zone__inner journey__outro">

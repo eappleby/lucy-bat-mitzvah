@@ -164,11 +164,15 @@ function drawFace(sp, s, b, blink) {
   sp.set(cx + 3, t + 7, CHEEK)
   sp.rect(cx - 1, t + 8, 3, 1, MOUTH)
   if (s.glasses) {
+    // Two small square frames in a lighter brown, so the eyes still read inside them.
+    const FRAME = '#7a5a3c'
     for (const ex of [cx - 2, cx + 2]) {
-      sp.set(ex - 1, t + 4, EYE); sp.set(ex, t + 4, EYE); sp.set(ex + 1, t + 4, EYE)
-      sp.set(ex - 1, t + 7, EYE); sp.set(ex + 1, t + 7, EYE); sp.set(ex, t + 7, EYE)
+      sp.rect(ex - 1, t + 4, 3, 1, FRAME)
+      sp.rect(ex - 1, t + 7, 3, 1, FRAME)
+      sp.rect(ex - 1, t + 5, 1, 2, FRAME)
+      sp.rect(ex + 1, t + 5, 1, 2, FRAME)
     }
-    sp.set(cx, t + 5, EYE)
+    sp.set(cx, t + 5, FRAME)
   }
   if (s.facepaint) {
     sp.set(cx - 3, t + 6, s.facepaint)
