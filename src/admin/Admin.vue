@@ -22,7 +22,7 @@ let sub
 const newCount = computed(() => store.submissions.filter((s) => s.status === 'new').length)
 const tabs = computed(() => [
   { id: 'households', label: 'Guest list' },
-  { id: 'inbox', label: newCount.value ? `Address inbox (${newCount.value})` : 'Address inbox' },
+  { id: 'inbox', label: newCount.value ? `Inbox (${newCount.value})` : 'Inbox' },
   { id: 'email', label: 'Email' },
   { id: 'bottles', label: 'Bottle notes' },
   { id: 'posts', label: "Lucy's sketchbook" },

@@ -352,11 +352,17 @@
   border-top: 1.5px solid var(--line);
 }
 .aguest {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px dashed var(--line);
 }
+.aguest > input { flex: 1 1 8rem; min-width: 0; }
+.aguest__main { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
+.aguest__bday { display: flex; gap: 0.3rem; }
 
 .atoast {
   position: fixed;
@@ -385,7 +391,6 @@
   .acard { flex-direction: column; }
   .acard__actions { align-items: flex-start; max-width: none; }
   .acard__row, .acard__suggest { justify-content: flex-start; }
-  .aguest { grid-template-columns: 1fr 1fr; }
 }
 
 /* Email tab: settings and list on the left, live preview on the right. */

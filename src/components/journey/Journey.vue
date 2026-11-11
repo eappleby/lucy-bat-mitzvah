@@ -18,7 +18,10 @@ import './journey.css'
 
 const PX = 8
 const G = W.GROUND
-const SCROLL_PER_UNIT = 0.7
+const SCROLL_PER_UNIT = 1.2 // page pixels per world unit, at full size
+// Lucy's top speed in world units a second, so holding down a scroll key or the
+// scrollbar does not send her flying. Far behind (a jump from a link), she may go faster.
+const MAX_SPEED = 1000
 
 const art = shallowRef(null)
 const images = {}
@@ -371,9 +374,10 @@ function frame(now) {
   last = now
   const before = t.value
   const gap = target.value - t.value
-  // a long jump (a click on the scrollbar, a link) glides quickly instead of crawling
-  const k = 1 - Math.exp(-dt * (Math.abs(gap) > 3000 ? 14 : 7))
-  t.value = Math.abs(gap) < 0.3 ? target.value : t.value + gap * k
+  const k = 1 - Math.exp(-dt * 7)
+  const limit = (MAX_SPEED + Math.max(0, Math.abs(gap) - 3000) * 0.5) * dt
+  const step = Math.max(-limit, Math.min(limit, gap * k))
+  t.value = Math.abs(gap) < 0.3 ? target.value : t.value + step
   const v = Math.abs(t.value - before) / dt
   speed.value += (Math.min(v, 900) - speed.value) * Math.min(1, dt * 8)
   clock.value += dt
@@ -413,6 +417,8 @@ onMounted(async () => {
   window.addEventListener('resize', onResize)
   observer = new IntersectionObserver(([e]) => {
     onScreen = e.isIntersecting
+    // Off screen there is nothing to watch, so catch up at once.
+    if (!onScreen) t.value = target.value
     if (onScreen) wake()
   })
   observer.observe(track.value)

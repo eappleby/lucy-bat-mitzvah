@@ -12,18 +12,29 @@ export const event = {
 
 export const copy = {
   // The personal address page (/i/<token>) and the shared one (/address).
-  address: {
-    comingSoon: 'is coming soon!',
-    confirmQuestion: 'Is this your address?',
-    yes: 'Yes',
-    no: 'No',
-    formHeading: 'Where should we mail it?',
-    send: 'Send my address',
-    sending: 'Sending',
-    thanksHeading: 'Thank you!',
-    thanksBody: "We'll mail it to {city}.",
-    change: 'Change my address',
-    unknownLink: "We don't recognize this link, but you can still send your address here.",
+  // What / shows while the Meet Lucy page is switched off in the admin.
+  comingSoon: {
+    heading: 'Coming soon!',
+    body: 'Lucy is still getting this page ready. Play a round of Pearl dive while you wait.',
+  },
+  // The contact info page (/i/<token> and /address) and its email.
+  contact: {
+    checkHeading: 'Contact info up to date?',
+    checkIntro: "It's bat mitzvah season! Could you take a quick look below and let Lucy know if your info is still correct.",
+    newHeading: "What's your contact info?",
+    newIntro: "It's bat mitzvah season! Could you fill this in so Lucy knows where to reach you?",
+    stillHeading: 'Still correct?',
+    stillBody: 'If everything still looks good, confirm below. If anything is outdated or incorrect, just click to update.',
+    confirm: 'Confirm info',
+    update: 'Update info',
+    save: 'Save my info',
+    saving: 'Saving',
+    thanksHeading: 'Thanks {name}!',
+    thanksBody: 'You just might be getting a card in the mail from Lucy.',
+    unknownLink: "We don't recognize this link, but you can still send Lucy your info here.",
+    labels: { address: 'Address', phone: 'Phone', email: 'Email', birthday: 'Birthday', family: 'Family' },
+    subjectCheck: 'Lucy wants to know if your contact info is still up to date?',
+    subjectNew: 'Lucy wants to know your contact info',
   },
   shallows: {
     heading: "Hi, I'm Lucy!",

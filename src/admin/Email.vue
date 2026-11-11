@@ -1,8 +1,9 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { store, toast, failed, loadHouseholds, addressStatus, statusLabel, formatWhen, plural } from './store.js'
-import { buildAddressEmail, defaultSubject } from './emailTemplate.js'
+import { buildContactEmail, hasInfo } from './emailTemplate.js'
+import { copy } from '../content.js'
 
 const props = defineProps({ userEmail: { type: String, default: '' } })
 
@@ -14,7 +15,10 @@ const previewId = ref(null)
 const sending = ref(false)
 const confirmSend = ref(false)
 const results = ref(null)
-const subject = ref(defaultSubject)
+// One subject for households we have info for, another for those we don't.
+const subjects = reactive({ check: copy.contact.subjectCheck, fresh: copy.contact.subjectNew })
+const subjectFor = (h) => (hasInfo(h) ? subjects.check : subjects.fresh)
+const build = (household) => buildContactEmail({ household, origin, subject: subjectFor(household) })
 
 const origin = window.location.origin
 const isLocal = /localhost|127\.0\.0\.1/.test(origin)
@@ -32,7 +36,7 @@ const noEmail = computed(() => store.households.filter((h) => !h.email && addres
 const previewHousehold = computed(
   () => store.households.find((h) => h.id === previewId.value) || candidates.value[0] || store.households.find((h) => h.email) || null,
 )
-const preview = computed(() => (previewHousehold.value ? buildAddressEmail({ household: previewHousehold.value, origin, subject: subject.value }) : null))
+const preview = computed(() => (previewHousehold.value ? build(previewHousehold.value) : null))
 
 watch(audience, () => {
   picked.value = new Set()
@@ -94,7 +98,7 @@ async function sendAll() {
   try {
     for (let i = 0; i < list.length; i += 50) {
       const chunk = list.slice(i, i + 50)
-      const out = await api('POST', { messages: chunk.map((household) => buildAddressEmail({ household, origin, subject: subject.value })) })
+      const out = await api('POST', { messages: chunk.map(build) })
       out.results.forEach((r, j) => all.push({ household: chunk[j], ...r }))
     }
   } catch (e) {
@@ -102,8 +106,8 @@ async function sendAll() {
   }
   if (all.length) {
     const log = all.map((r) => ({
-      household_id: r.household.id, kind: 'address-check', to_email: r.household.email,
-      subject: subject.value, postmark_id: r.id || null, error: r.ok ? null : r.error,
+      household_id: r.household.id, kind: 'contact-check', to_email: r.household.email,
+      subject: subjectFor(r.household), postmark_id: r.id || null, error: r.ok ? null : r.error,
     }))
     failed((await supabase.from('email_log').insert(log)).error, 'write the email log')
     const okIds = all.filter((r) => r.ok).map((r) => r.household.id)
@@ -121,8 +125,8 @@ async function sendAll() {
 
 <template>
   <section>
-    <div class="atools"><h2>Address check email</h2></div>
-    <p class="ahint">Each household gets its own email. If we have their address, it asks "Is this your address?" with Yes and No buttons. If we don't, it asks where to mail it. Every answer is saved to the guest list.</p>
+    <div class="atools"><h2>Contact info email</h2></div>
+    <p class="ahint">Each household gets its own email. If we have their address, it shows everything we have for them (address, phone, email, birthday, family) and asks "Still correct?" with Confirm info and Update info buttons. If we don't, it asks for their contact info. Every answer is saved to the guest list.</p>
 
     <p v-if="status?.configured" class="anote anote--ok">Postmark is connected. Emails go out from {{ status.from }}.</p>
     <div v-else-if="status" class="anote anote--warn">
@@ -135,7 +139,8 @@ async function sendAll() {
     <div class="aemail">
       <div class="aemail__side">
         <form class="apanel" @submit.prevent>
-          <label class="afield"><span>Subject</span><input v-model="subject" /></label>
+          <label class="afield"><span>Subject when we have their info</span><input v-model="subjects.check" /></label>
+          <label class="afield"><span>Subject when we don't</span><input v-model="subjects.fresh" /></label>
           <div class="atools">
             <span class="atools__gap"></span>
             <button type="button" class="abtn abtn--small" :disabled="sending || !status?.configured || !preview" @click="sendTest">Send this preview to {{ userEmail }}</button>
@@ -146,7 +151,7 @@ async function sendAll() {
           <h3>Who gets it</h3>
           <select v-model="audience" aria-label="Which households">
             <option value="unsent">Not emailed yet</option>
-            <option value="unanswered">Has not confirmed an address</option>
+            <option value="unanswered">Has not confirmed their info</option>
             <option value="all">Everyone with an email</option>
           </select>
         </div>
@@ -158,7 +163,7 @@ async function sendAll() {
             {{ sending ? 'Sending' : confirmSend ? `Yes, email ${plural(recipients.length, 'household')} now` : `Send to ${plural(recipients.length, 'household')}` }}
           </button>
         </div>
-        <p v-if="noEmail" class="ahint">{{ plural(noEmail, 'household') }} without a confirmed address {{ noEmail === 1 ? 'has' : 'have' }} no email on file. Text them their personal link from the Guest list tab.</p>
+        <p v-if="noEmail" class="ahint">{{ plural(noEmail, 'household') }} that {{ noEmail === 1 ? 'has' : 'have' }} not confirmed {{ noEmail === 1 ? 'has' : 'have' }} no email on file. Text them their personal link from the Guest list tab.</p>
 
         <div v-if="!candidates.length" class="aempty">
           <h2>No one to email in this group</h2>
@@ -166,7 +171,7 @@ async function sendAll() {
         </div>
         <div v-else class="atable-wrap">
           <table class="atable">
-            <thead><tr><th></th><th>Household</th><th>Address</th><th>Last emailed</th></tr></thead>
+            <thead><tr><th></th><th>Household</th><th>Info</th><th>Last emailed</th></tr></thead>
             <tbody>
               <tr v-for="h in candidates" :key="h.id" :class="{ 'is-previewed': previewHousehold?.id === h.id }" @click="previewId = h.id">
                 <td><input type="checkbox" :checked="picked.has(h.id)" :aria-label="'Email ' + h.name" @click.stop="toggle(h.id)" /></td>

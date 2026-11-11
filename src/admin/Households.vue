@@ -1,8 +1,9 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
-import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural, addressStatus, statusLabel } from './store.js'
+import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural, addressStatus, statusLabel, setMeetLucyOpen } from './store.js'
 import { parseCsv, rowsToHouseholds, downloadCsv } from './csv.js'
+import { MONTHS, RELATIONSHIPS, birthdayText, familyLine, fullName } from '../lib/contact.js'
 
 const search = ref('')
 const filter = ref('all')
@@ -32,7 +33,7 @@ const rows = computed(() => {
     if (filter.value === 'noemail' && h.email) return false
     if (group.value && h.group_tag !== group.value) return false
     if (!q) return true
-    return [h.name, h.greeting, h.email, h.city, h.notes, guestNames(h)].some((v) => (v || '').toLowerCase().includes(q))
+    return [h.name, h.greeting, h.email, h.phone, h.city, h.notes, guestNames(h)].some((v) => (v || '').toLowerCase().includes(q))
   })
 })
 
@@ -54,7 +55,19 @@ function edit(h) {
 }
 
 function addGuest() {
-  editing.value.guests.push({ id: null, first_name: '', last_name: '', kind: 'adult' })
+  const list = editing.value.guests
+  list.push({ id: null, first_name: '', last_name: '', kind: 'adult', relationship: '', birthday_month: null, birthday_day: null, is_primary: !list.length })
+}
+
+function makePrimary(i) {
+  editing.value.guests.forEach((g, j) => (g.is_primary = i === j))
+}
+
+// "Dana Rivera (main contact, July 1st), Sam Rivera (Spouse)"
+function peopleLine(h) {
+  return h.guests
+    .map((g) => (g.is_primary ? fullName(g) + (g.birthday_month ? ` (${birthdayText(g.birthday_month, g.birthday_day)})` : '') : familyLine(g)))
+    .join(', ')
 }
 
 async function save() {
@@ -89,18 +102,25 @@ async function save() {
   const keepIds = e.guests.filter((g) => g.id).map((g) => g.id)
   const removed = (before?.guests || []).filter((g) => !keepIds.includes(g.id)).map((g) => g.id)
   if (removed.length) await supabase.from('guests').delete().in('id', removed)
-  const guests = e.guests
-    .filter((g) => g.first_name.trim())
-    .map((g, i) => ({
-      ...(g.id ? { id: g.id } : {}),
-      household_id: id,
-      first_name: g.first_name.trim(),
-      last_name: (g.last_name || '').trim() || null,
-      kind: g.kind || 'adult',
-      sort: i,
-    }))
+  const kept = e.guests.filter((g) => g.first_name.trim())
+  // Exactly one main contact: the one picked, or else the first person.
+  const primaryAt = Math.max(0, kept.findIndex((g) => g.is_primary))
+  const guests = kept.map((g, i) => ({
+    ...(g.id ? { id: g.id } : {}),
+    household_id: id,
+    first_name: g.first_name.trim(),
+    last_name: (g.last_name || '').trim() || null,
+    kind: g.kind || 'adult',
+    is_primary: i === primaryAt,
+    relationship: i === primaryAt ? null : (g.relationship || '').trim() || null,
+    birthday_month: g.birthday_month && g.birthday_day ? Number(g.birthday_month) : null,
+    birthday_day: g.birthday_month && g.birthday_day ? Number(g.birthday_day) : null,
+    sort: i,
+  }))
   const existing = guests.filter((g) => g.id)
   const fresh = guests.filter((g) => !g.id)
+  // Only one person per household can be the main contact, so clear the flag before setting it again.
+  if (existing.length) await supabase.from('guests').update({ is_primary: false }).eq('household_id', id)
   if (existing.length) failed((await supabase.from('guests').upsert(existing)).error, 'save guests')
   if (fresh.length) failed((await supabase.from('guests').insert(fresh)).error, 'add guests')
 
@@ -127,18 +147,22 @@ async function remove() {
 }
 
 function exportCsv() {
-  const header = ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'address_status', 'group', 'notes', 'personal_link']
-  const body = rows.value.map((h) => [
-    h.name, h.greeting, h.guests.map((g) => [g.first_name, g.last_name].filter(Boolean).join(' ')).join('; '),
-    h.email, h.phone, h.address1, h.address2, h.city, h.state, h.postal_code, h.country, statusLabel[addressStatus(h)], h.group_tag, h.notes, inviteLink(h),
-  ])
+  const header = ['name', 'greeting', 'guests', 'birthday', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'info_status', 'group', 'notes', 'personal_link']
+  const body = rows.value.map((h) => {
+    const main = h.guests.find((g) => g.is_primary)
+    return [
+      h.name, h.greeting, h.guests.map((g) => (g.is_primary ? fullName(g) : familyLine(g))).join('; '),
+      main ? birthdayText(main.birthday_month, main.birthday_day) : '',
+      h.email, h.phone, h.address1, h.address2, h.city, h.state, h.postal_code, h.country, statusLabel[addressStatus(h)], h.group_tag, h.notes, inviteLink(h),
+    ]
+  })
   downloadCsv('lucy-bat-mitzvah-guest-list.csv', [header, ...body])
 }
 
 function template() {
   downloadCsv('guest-list-template.csv', [
-    ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'group', 'notes'],
-    ['The Rivera Family', 'Aunt Dana and Uncle Sam', 'Dana Rivera; Sam Rivera; Max Rivera', 'dana@example.com', '', '12 Garfield Pl', 'Apt 3', 'Brooklyn', 'NY', '11215', 'United States', 'Family', ''],
+    ['name', 'greeting', 'guests', 'birthday', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'group', 'notes'],
+    ['The Rivera Family', 'Aunt Dana and Uncle Sam', 'Dana Rivera; Sam Rivera (Spouse); Max Rivera (Son)', 'July 1', 'dana@example.com', '(555) 010-2000', '12 Garfield Pl', 'Apt 3', 'Brooklyn', 'NY', '11215', 'United States', 'Family', ''],
   ])
 }
 
@@ -163,7 +187,7 @@ async function runImport() {
   const { data, error } = await supabase.from('households').insert(payload).select('id')
   if (failed(error, 'import households')) return (importing.busy = false)
   const guests = []
-  data.forEach((h, i) => list[i].guests.forEach((g) => guests.push({ ...g, kind: 'adult', household_id: h.id })))
+  data.forEach((h, i) => list[i].guests.forEach((g) => guests.push({ ...g, household_id: h.id })))
   if (guests.length) failed((await supabase.from('guests').insert(guests)).error, 'import guests')
   await loadHouseholds()
   importing.busy = false
@@ -180,18 +204,22 @@ async function runImport() {
       <div><strong>{{ stats.guests }}</strong> guests</div>
       <div><strong>{{ stats.confirmed }}</strong> confirmed</div>
       <div><strong>{{ stats.unconfirmed }}</strong> not confirmed yet</div>
-      <div :class="{ 'is-warn': stats.needed }"><strong>{{ stats.needed }}</strong> addresses needed</div>
+      <div :class="{ 'is-warn': stats.needed }"><strong>{{ stats.needed }}</strong> need an address</div>
     </div>
 
     <div class="ashare">
-      <span>Address form for anyone without a personal link:</span>
+      <span>Contact form for anyone without a personal link:</span>
       <code>{{ sharedForm }}</code>
       <button class="abtn abtn--small" @click="copyText(sharedForm, 'Link copied')">Copy</button>
     </div>
-    <div class="ashare">
+    <div class="ashare" :class="{ 'ashare--off': !store.meetLucyOpen }">
       <span>Meet Lucy page, for the save the date card:</span>
       <code>{{ meetLucy }}</code>
       <button class="abtn abtn--small" @click="copyText(meetLucy, 'Link copied')">Copy</button>
+      <span class="achip" :class="store.meetLucyOpen ? 'achip--confirmed' : 'achip--needed'">{{ store.meetLucyOpen ? 'Open to everyone' : 'Showing Coming soon' }}</span>
+      <button class="abtn abtn--small" :class="{ 'abtn--primary': !store.meetLucyOpen }" @click="setMeetLucyOpen(!store.meetLucyOpen)">
+        {{ store.meetLucyOpen ? 'Switch to Coming soon' : 'Open it to everyone' }}
+      </button>
     </div>
 
     <div class="atools">
@@ -199,8 +227,8 @@ async function runImport() {
       <select v-model="filter" aria-label="Filter by address">
         <option value="all">Everyone</option>
         <option value="needed">Address needed</option>
-        <option value="unconfirmed">Address not confirmed</option>
-        <option value="confirmed">Address confirmed</option>
+        <option value="unconfirmed">Info not confirmed</option>
+        <option value="confirmed">Info confirmed</option>
         <option value="noemail">No email</option>
       </select>
       <select v-if="groups.length" v-model="group" aria-label="Filter by group">
@@ -215,19 +243,19 @@ async function runImport() {
 
     <div v-if="!store.households.length && !store.loading" class="aempty">
       <h2>No one on the list yet</h2>
-      <p>Add a household, or import a spreadsheet of everyone you plan to invite. Addresses people send through the site show up under Address inbox.</p>
+      <p>Add a household, or import a spreadsheet of everyone you plan to invite. Info people send through the shared link shows up under the inbox.</p>
     </div>
 
     <div v-else class="atable-wrap">
       <table class="atable">
         <thead>
-          <tr><th>Household</th><th>Guests</th><th>Email</th><th>Mailing address</th><th>Group</th><th></th></tr>
+          <tr><th>Household</th><th>People</th><th>Email and phone</th><th>Mailing address</th><th>Group</th><th></th></tr>
         </thead>
         <tbody>
           <tr v-for="h in rows" :key="h.id" tabindex="0" @click="edit(h)" @keydown.enter="edit(h)">
             <td><strong>{{ h.name }}</strong><small v-if="h.greeting">{{ h.greeting }}</small></td>
-            <td>{{ guestNames(h) || '' }}</td>
-            <td>{{ h.email }}</td>
+            <td>{{ peopleLine(h) }}</td>
+            <td>{{ h.email }}<small v-if="h.phone">{{ h.phone }}</small></td>
             <td>
               <template v-if="hasAddress(h)">{{ addressLine(h) }}<br /></template>
               <span class="achip" :class="'achip--' + addressStatus(h)">{{ statusLabel[addressStatus(h)] }}</span>
@@ -264,12 +292,20 @@ async function runImport() {
         </div>
 
         <h3>People in this household</h3>
+        <p class="ahint">The main contact's name and birthday go at the top of the contact email. Everyone else is listed under Family with their relationship to the main contact.</p>
         <div v-for="(g, i) in editing.guests" :key="i" class="aguest">
+          <label class="aguest__main"><input type="radio" name="primary" :checked="g.is_primary" @change="makePrimary(i)" /> Main contact</label>
           <input v-model="g.first_name" placeholder="First name" aria-label="First name" />
           <input v-model="g.last_name" placeholder="Last name" aria-label="Last name" />
+          <input v-if="!g.is_primary" v-model="g.relationship" list="relationship-options" placeholder="Relationship" aria-label="Relationship to the main contact" />
           <select v-model="g.kind" aria-label="Adult or kid"><option value="adult">Adult</option><option value="kid">Kid</option></select>
+          <span class="aguest__bday">
+            <select v-model="g.birthday_month" aria-label="Birthday month"><option :value="null">Birthday</option><option v-for="(m, k) in MONTHS" :key="m" :value="k + 1">{{ m }}</option></select>
+            <select v-model="g.birthday_day" aria-label="Birthday day"><option :value="null">Day</option><option v-for="d in 31" :key="d" :value="d">{{ d }}</option></select>
+          </span>
           <button type="button" class="abtn abtn--small abtn--quiet" @click="editing.guests.splice(i, 1)">Remove</button>
         </div>
+        <datalist id="relationship-options"><option v-for="r in RELATIONSHIPS" :key="r" :value="r" /></datalist>
         <button type="button" class="abtn abtn--small" @click="addGuest">Add a person</button>
 
         <h3>Invited to</h3>
@@ -303,7 +339,7 @@ async function runImport() {
           <button type="button" class="abtn abtn--quiet" @click="importing.open = false">Close</button>
         </header>
         <p>Choose a CSV file, or copy rows from Google Sheets or Excel and paste them below. The first row must be column names. Only <code>name</code> is required.</p>
-        <p>Recognized columns: name, greeting, guests (separated by semicolons), email, phone, address1, address2, city, state, zip, country, group, notes.</p>
+        <p>Recognized columns: name, greeting, guests (separated by semicolons, with the relationship in parentheses, main contact first), birthday (the main contact's, like July 1 or 7/1), email, phone, address1, address2, city, state, zip, country, group, notes.</p>
         <div class="atools">
           <input type="file" accept=".csv,text/csv,text/plain" @change="onFile" />
           <button type="button" class="abtn abtn--small" @click="template">Download a template</button>

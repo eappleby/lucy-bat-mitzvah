@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { store, toast, failed, loadHouseholds, loadSubmissions, formatWhen } from './store.js'
+import { birthdayText, familyLine, fullName } from '../lib/contact.js'
 
 const showAll = ref(false)
 const pick = reactive({}) // submission id -> chosen household id
@@ -12,7 +13,7 @@ const householdName = (id) => store.households.find((h) => h.id === id)?.name ||
 // Likely matches: same email, or a shared word in the name (ignoring "the", "family", and so on).
 const STOP = new Set(['the', 'family', 'and', 'mr', 'mrs', 'ms', 'dr', '&'])
 function suggestions(s) {
-  const words = s.name.toLowerCase().split(/[^a-z']+/).filter((w) => w.length > 2 && !STOP.has(w))
+  const words = `${s.name} ${s.last_name || ''}`.toLowerCase().split(/[^a-z']+/).filter((w) => w.length > 2 && !STOP.has(w))
   return store.households
     .filter((h) => {
       if (s.email && h.email && s.email.toLowerCase() === h.email.toLowerCase()) return true
@@ -26,7 +27,34 @@ function addressFields(s) {
   return {
     address1: s.address1, address2: s.address2, city: s.city, state: s.state, postal_code: s.postal_code,
     country: s.country || 'United States', address_updated_at: new Date().toISOString(),
+    address_confirmed_at: new Date().toISOString(),
   }
+}
+
+const kidWords = /\b(son|daughter|child|kid)\b/i
+const sameName = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase()
+
+// The people from a submission that a household does not have yet: the sender as main
+// contact (when it has none), and family members not already listed by first name.
+function newPeople(s, householdId, existing = []) {
+  const people = []
+  const hasPrimary = existing.some((g) => g.is_primary)
+  const senderListed = existing.some((g) => sameName(g.first_name, s.first_name))
+  let sort = existing.length
+  if (s.first_name && !senderListed) {
+    people.push({
+      household_id: householdId, first_name: s.first_name, last_name: s.last_name, is_primary: !hasPrimary,
+      birthday_month: s.birthday_month, birthday_day: s.birthday_day, kind: 'adult', sort: sort++,
+    })
+  }
+  for (const f of s.family || []) {
+    if (existing.some((g) => sameName(g.first_name, f.first_name))) continue
+    people.push({
+      household_id: householdId, first_name: f.first_name, last_name: f.last_name, relationship: f.relationship,
+      kind: kidWords.test(f.relationship || '') ? 'kid' : 'adult', sort: sort++,
+    })
+  }
+  return people
 }
 
 async function finish(s, household_id, status, message) {
@@ -43,6 +71,8 @@ async function createHousehold(s) {
     .select('id')
     .single()
   if (failed(error, 'create the household')) return
+  const people = newPeople(s, data.id)
+  if (people.length) failed((await supabase.from('guests').insert(people)).error, 'add the people')
   await finish(s, data.id, 'merged', `Added ${s.name} to the guest list`)
 }
 
@@ -53,8 +83,15 @@ async function mergeInto(s, householdId) {
   if (s.email && !target.email) fields.email = s.email
   if (s.phone && !target.phone) fields.phone = s.phone
   const { error } = await supabase.from('households').update(fields).eq('id', householdId)
-  if (failed(error, 'save the address')) return
-  await finish(s, householdId, 'merged', `Address saved for ${target.name}`)
+  if (failed(error, 'save the info')) return
+  // The sender's birthday goes on their own row when they are already listed.
+  const me = target.guests.find((g) => sameName(g.first_name, s.first_name))
+  if (me && s.birthday_month) {
+    await supabase.from('guests').update({ birthday_month: s.birthday_month, birthday_day: s.birthday_day }).eq('id', me.id)
+  }
+  const people = newPeople(s, householdId, target.guests)
+  if (people.length) failed((await supabase.from('guests').insert(people)).error, 'add the people')
+  await finish(s, householdId, 'merged', `Info saved for ${target.name}`)
 }
 
 const confirming = ref(null)
@@ -73,26 +110,29 @@ const restore = (s) => finish(s, null, 'new', 'Moved back to the inbox')
 <template>
   <section>
     <div class="atools">
-      <h2>Addresses sent through the site</h2>
+      <h2>Contact info sent through the site</h2>
       <span class="atools__gap"></span>
       <label class="acheck"><input v-model="showAll" type="checkbox" /> Show handled ones too</label>
     </div>
-    <p class="ahint">People who use their personal link are saved to their household automatically. Everyone else lands here for you to match.</p>
+    <p class="ahint">People who use their personal link are saved to their household automatically. Everyone else lands here for you to match. Saving to a household fills in the address, adds any family members it does not have yet, and marks the info as confirmed.</p>
 
     <div v-if="!list.length" class="aempty">
       <h2>Inbox is clear</h2>
-      <p>New addresses from the shared link will show up here.</p>
+      <p>New contact info from the shared link will show up here.</p>
     </div>
 
     <article v-for="s in list" :key="s.id" class="acard" :class="'acard--' + s.status">
       <div class="acard__main">
         <h3>{{ s.name }}</h3>
+        <p v-if="s.first_name && fullName(s) !== s.name" class="acard__meta">From {{ fullName(s) }}</p>
         <p>
           {{ s.address1 }}<template v-if="s.address2">, {{ s.address2 }}</template><br />
           {{ s.city }}<template v-if="s.state">, {{ s.state }}</template> {{ s.postal_code }}
           <template v-if="s.country && s.country !== 'United States'"><br />{{ s.country }}</template>
         </p>
         <p v-if="s.email || s.phone" class="acard__meta">{{ [s.email, s.phone].filter(Boolean).join(' | ') }}</p>
+        <p v-if="s.birthday_month" class="acard__meta">Birthday: {{ birthdayText(s.birthday_month, s.birthday_day) }}</p>
+        <p v-if="s.family?.length" class="acard__meta">Family: {{ s.family.map(familyLine).join(', ') }}</p>
         <blockquote v-if="s.note">{{ s.note }}</blockquote>
         <p class="acard__meta">Sent {{ formatWhen(s.created_at) }}</p>
       </div>

@@ -6,6 +6,7 @@ export const store = reactive({
   households: [],
   events: [],
   submissions: [],
+  meetLucyOpen: false,
   loading: false,
   toast: '',
   toastKind: 'ok',
@@ -51,20 +52,34 @@ export async function loadSubmissions() {
   store.submissions = data
 }
 
+export async function loadSettings() {
+  const { data, error } = await supabase.from('site_settings').select('key, value')
+  if (failed(error, 'load site settings')) return
+  store.meetLucyOpen = data.find((r) => r.key === 'meet_lucy_open')?.value === true
+}
+
+// Turns the Meet Lucy page on or off for visitors.
+export async function setMeetLucyOpen(open) {
+  const { error } = await supabase.from('site_settings').upsert({ key: 'meet_lucy_open', value: open, updated_at: new Date().toISOString() })
+  if (failed(error, 'change the Meet Lucy page')) return
+  store.meetLucyOpen = open
+  toast(open ? 'Meet Lucy is open to everyone' : 'Visitors now see Coming soon')
+}
+
 export async function loadAll() {
   store.loading = true
-  await Promise.all([loadHouseholds(), loadEvents(), loadSubmissions()])
+  await Promise.all([loadHouseholds(), loadEvents(), loadSubmissions(), loadSettings()])
   store.loading = false
 }
 
 export const hasAddress = (h) => !!(h.address1 && h.address1.trim())
 
-// needed: no address yet. unconfirmed: we have one but the guest has not said yes. confirmed: the guest said yes or sent it.
+// needed: no address yet. unconfirmed: we have one but the guest has not confirmed their info. confirmed: they confirmed it or sent it.
 export function addressStatus(h) {
   if (!hasAddress(h)) return 'needed'
   return h.address_confirmed_at ? 'confirmed' : 'unconfirmed'
 }
-export const statusLabel = { needed: 'Needed', unconfirmed: 'Not confirmed', confirmed: 'Confirmed' }
+export const statusLabel = { needed: 'Needs address', unconfirmed: 'Not confirmed', confirmed: 'Confirmed' }
 
 export function addressLine(h) {
   if (!hasAddress(h)) return ''

@@ -4,9 +4,9 @@ The website for Lucy Appleby's bat mitzvah on March 20, 2027 in Park Slope, Broo
 
 Right now the site does three jobs:
 
-1. **Collects mailing addresses** for the save the dates. Each household gets a personal email asking "Is this your address?" with Yes and No buttons, or asking where to mail it when we have no address.
-2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that plays as you scroll, a message in a bottle, and "Invitation to follow. Stay tuned!"
-3. **An admin** for the guest list and the address emails.
+1. **Checks everyone's contact info.** Each household gets a personal email, "Contact info up to date?", that lists what we have for them (address, phone, email, the main contact's birthday, and family with relationships) with Confirm info and Update info buttons. When we have no address, it asks for their contact info instead.
+2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that plays as you scroll, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive) until it is switched on in the admin.
+3. **An admin** for the guest list, the contact emails, and the Meet Lucy switch.
 
 RSVPs by personal link, hotels, and the schedule come later. The database tables for RSVPs already exist.
 
@@ -30,7 +30,7 @@ Open http://localhost:5173. The admin is at http://localhost:5173/admin.
 | `npm run db:new <name>` | Create an empty migration file. |
 | `npm run photo -- <image> <name>` | Make web sizes of a photo in `public/photos/`. |
 | `npm run journey` | Redraw the 8-bit game art. See "The video game" below. |
-| `npm run email-art` | Redraw the email header and footer pictures (needs `npm run dev` running). |
+| `npm run email-art` | Redraw the email heading and footer pictures (needs `npm run dev` running). |
 | `node scripts/render-movie.cjs` | Export `/movie` as an MP4. See "The movie" below. |
 
 `npm run journey`, `npm run email-art`, and the movie export need Playwright with Chromium, one time: `npm i -D playwright && npx playwright install chromium`. The movie also needs ffmpeg.
@@ -46,21 +46,24 @@ index.html
 shared/public-config.js     Supabase URL and publishable key (public values only)
 src/
   content.js                Every word and photo choice on the public pages
-  Dive.vue                  Meet Lucy, the page at /
-  AddressPage.vue           The address page at /address and /i/<token>
+  Home.vue                  The page at /: Meet Lucy when switched on, Coming soon when off
+  Dive.vue                  Meet Lucy
+  ComingSoon.vue            Coming soon, with the Pearl dive game (components/coming-soon/)
+  ContactPage.vue           The contact page at /address and /i/<token>
   Movie.vue                 The animated save the date at /movie
   components/               One file per section of Meet Lucy
   components/journey/       The 8-bit video game ("How I got here")
   lib/supabase.js           Supabase client
   lib/state.js              Pearl hunt and lightbox
+  lib/contact.js            Birthday, address, and family formatting shared by the page, email, and admin
   admin/                    The admin, loaded only at /admin
-  admin/emailTemplate.js    The address email
+  admin/emailTemplate.js    The contact email
   styles/                   base.css (shared), dive.css, address.css, admin.css
 functions/api/send-email.js Postmark sender, admin only
 public/art/                 Illustrations cut from the save the date
 public/photos/              Web sizes of the family photos
 public/journey/             8-bit scenery and sprites (made by npm run journey)
-public/email/               Email header and footer pictures (made by npm run email-art)
+public/email/               Email heading and footer pictures (made by npm run email-art)
 supabase/migrations/        Database schema
 scripts/                    Photo resizer, game art, email art, movie export
 exports/                    Rendered videos (not committed)
@@ -71,20 +74,24 @@ reference/                  Original photos and the card (not committed)
 
 | Path | Who it is for |
 | --- | --- |
-| `/i/<token>` | One household, from its email. Shows the address we have and asks if it is right. Yes confirms it; No opens a form filled in with what we have. With no address on file it asks where to mail it. |
-| `/address` | Anyone. The shared link for people we have no email for. Answers land in Admin > Address inbox. |
-| `/` | Meet Lucy. The link for the save the date card. |
+| `/i/<token>` | One household, from its email. Shows everything we have for them and asks "Still correct?". Confirm info saves that it is right and says "Thanks <first name>!"; Update info opens a form filled in with what we have, where they can also add or remove family. With no address on file the form opens right away. |
+| `/address` | Anyone. The shared contact form for people we have no email for. Answers land in Admin > Inbox. |
+| `/` | Meet Lucy, the link for the save the date card. Shows "Coming soon" and Pearl dive until it is switched on (Admin > Guest list). Signed in admins always see the real page, with a note at the bottom. |
 | `/movie` | A 32 second animated save the date. |
 | `/admin` | The family. Email and password sign in. |
 
-The email buttons go to `/i/<token>?answer=yes` and `/i/<token>?answer=no`, so one tap from the email confirms the address or opens the form.
+The email buttons go to `/i/<token>?answer=yes` and `/i/<token>?answer=no`, so one tap from the email confirms the info or opens the form.
+
+Each household has one main contact (the first person, unless you pick another in the guest list). Their name and birthday fill the top of the email; everyone else is listed under Family with their relationship to the main contact. Birthdays are month and day only.
 
 ## Security model
 
 - Every table has row level security turned on.
 - Visitors cannot read or write any table. The one exception is published rows of `lucy_posts`.
-- Visitors act only through database functions: `get_invite`, `confirm_address`, `submit_address`, `send_bottle`, `get_public_bottles`.
-- `get_invite` returns a household's name and mailing address to whoever holds that household's personal link, so they can check it. It never returns emails or guest names, and nothing returns an address without a valid token.
+- Visitors act only through database functions: `get_invite`, `confirm_info`, `submit_contact`, `send_bottle`, `get_public_bottles`, `get_site_status`.
+- `get_invite` returns a household's contact card (envelope name, address, phone, email, the main contact's name and birthday, and family names with relationships) to whoever holds that household's personal link, so they can check it. Notes, groups, and other households are never returned, and nothing is returned without a valid token.
+- `submit_contact` with a personal token updates that household right away, including adding and removing family members. Every send is also kept in `address_submissions` as a record.
+- The Coming soon switch is checked in the browser. Meet Lucy's code is only downloaded when it is shown, but its photos in `public/photos/` can still be opened by exact address.
 - Admins are Supabase Auth users whose email is in the `admins` table.
 - The site asks search engines not to index it (`robots.txt`, a meta tag, and an `X-Robots-Tag` header). Anyone with the link can still open it.
 
@@ -105,7 +112,7 @@ Repeat steps 1 and 2 for each person who should have access.
 
 ### 2. Database changes
 
-The schema, including `20261111000000_confirm_address.sql`, is already applied to the hosted project. To change it:
+Every file in `supabase/migrations/` is already applied to the hosted project, through `20261112010000_site_settings.sql`. To change it:
 
 ```sh
 npm run db:link          # one time, asks for the database password
@@ -140,8 +147,9 @@ Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.v
 
 ## Everyday jobs
 
-- **Send the address emails:** Admin > Email. Pick who gets it (not emailed yet, not answered yet, or everyone), click a row to preview that household's email, send yourself a test, then send. The email images load from the live site, so send from the deployed admin, not localhost.
-- **Watch the answers:** Admin > Guest list shows each household as Confirmed, Not confirmed, or Needs address. Addresses from the shared `/address` link arrive in Admin > Address inbox.
+- **Open Meet Lucy to everyone:** Admin > Guest list > Open it to everyone. Switch to Coming soon puts it back.
+- **Send the contact emails:** Admin > Email. Pick who gets it (not emailed yet, not confirmed yet, or everyone), click a row to preview that household's email, send yourself a test, then send. There is one subject for households we have info for and another for those we don't. The email images load from the live site, so send from the deployed admin, not localhost.
+- **Watch the answers:** Admin > Guest list shows each household as Confirmed, Not confirmed, or Needs address. Info from the shared `/address` link arrives in Admin > Inbox; saving it to a household fills in the address and adds any family members it does not have yet.
 - **Mailing labels:** Admin > Guest list > Export for mailing labels.
 - **Change words:** edit `src/content.js`.
 - **Add a photo:** `npm run photo -- reference/IMG_1234.jpg beach-day`, then add the id to `timeline` (oldest last) or `friends` in `src/content.js`. `mainPhoto` is the big circle at the top of Meet Lucy.
@@ -149,7 +157,7 @@ Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.v
 
 ## The video game
 
-"How I got here" on Meet Lucy is a side scroller in the style of 1980s games. Lucy stays in the middle while the world scrolls past, and the page scroll moves her: an inchworm in Williamsburg, a baby in a stroller to Park Slope, a little princess hopping past PS 107, friends at the playground, art class and the ice rink, family trips to Paris, London, Berlin, Israel, Japan and Costa Rica with boogie boarding, color war at Camp Pembroke, dancing at MS 51, and finally the bema. She changes into the next version of herself each time she walks through a door.
+"How I got here" on Meet Lucy is a side scroller in the style of 1980s games. Lucy stays in the middle while the world scrolls past, and the page scroll moves her (with a top speed, so holding down a scroll key does not send her flying): an inchworm in Williamsburg, a baby in a stroller to Park Slope, a little princess hopping past PS 107, friends at the playground, art class and the ice rink, family trips to Paris, London, Berlin, Israel, Japan and Costa Rica with boogie boarding, color war at Camp Pembroke, dancing at MS 51, and finally the bema. She changes into the next version of herself each time she walks through a door.
 
 - `src/components/journey/world.js` is the map: where every door, activity, place name, and sky change is, in world units (the world is 1000 tall).
 - `scripts/journey/scenery.mjs` draws the buildings and props as shapes. `scripts/journey/sprites.mjs` draws every character pixel by pixel, with their walk and activity frames.

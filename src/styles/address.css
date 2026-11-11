@@ -1,4 +1,4 @@
-/* The address page: one sheet of save the date paper with the card's art around it. */
+/* The contact page: one sheet of save the date paper with the card's art around it. */
 .ap {
   min-height: 100svh;
   padding: clamp(0.75rem, 3vw, 2.5rem) 1rem;
@@ -32,13 +32,22 @@
 }
 
 .ap-head { position: relative; z-index: 1; }
-.ap-whose {
+.ap-title {
+  margin: 0;
+  font-size: clamp(2.2rem, 9vw, 3.4rem);
+  font-weight: 560;
+  font-variation-settings: 'BNCE' 0, 'INFM' 100, 'SPAC' 0;
+  line-height: 1;
+  text-wrap: balance;
+  transform: rotate(-1.5deg);
+}
+.cs-whose {
   margin: 0;
   font-size: clamp(1.7rem, 7vw, 2.4rem);
   line-height: 1;
   transform: rotate(-3deg);
 }
-.ap-title {
+.cs-title {
   margin: 0.25rem 0 0;
   font-size: clamp(2.6rem, 12.5vw, 4.6rem);
   font-weight: 520;
@@ -47,12 +56,13 @@
   line-height: 0.95;
   letter-spacing: 0.02em;
 }
-.ap-soon {
+.cs-soon {
   margin: 0.3rem 0 0;
   font-size: clamp(1.6rem, 6.5vw, 2.2rem);
   color: var(--coral);
   transform: rotate(-2deg);
 }
+.cs-card { max-width: 720px; }
 .ap-wave { width: 160px; margin: 0.5rem auto 0.3rem; }
 
 .ap-body {
@@ -69,49 +79,37 @@
   transform: rotate(-1deg);
 }
 
-/* The address on file, written on a little envelope. */
-.ap-envelope {
+/* Everything we have for them, on one index card. */
+.ap-info {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.05rem;
+  display: grid;
+  gap: 1rem;
   max-width: 24rem;
-  margin: 0 auto 1.4rem;
-  padding: 1.1rem 2.9rem 1.2rem;
+  margin: 0 auto 1.8rem;
+  padding: 1.3rem 1.6rem 1.4rem;
   background: var(--pearl);
   border: 3px solid var(--ink);
   border-radius: var(--wobble);
-  font-style: normal;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   line-height: 1.3;
-  transform: rotate(0.8deg);
+  text-align: left;
+  transform: rotate(0.6deg);
 }
-.ap-envelope strong {
-  margin-bottom: 0.2rem;
+.ap-info__block dt {
+  margin-bottom: 0.15rem;
   font-family: var(--display);
   font-weight: 650;
-  font-size: 1.3rem;
+  font-size: 1.05rem;
+  color: var(--coral);
 }
-.ap-envelope::after {
-  /* A stamp in the corner. */
-  content: '';
-  position: absolute;
-  top: 10px;
-  right: 12px;
-  width: 24px;
-  height: 29px;
-  background: var(--coral);
-  border: 3px dotted #fff;
-  outline: 2px solid var(--coral);
-  transform: rotate(6deg);
-}
+.ap-info__block dd { margin: 0; }
 .ap-choice {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
 }
-.ap-choice .btn { min-width: 7.5rem; justify-content: center; }
+.ap-choice .btn { min-width: 7.5rem; justify-content: center; white-space: nowrap; }
 .ap-no { box-shadow: 4px 5px 0 var(--coral); }
 .ap-no:hover { box-shadow: 6px 8px 0 var(--coral); }
 
@@ -127,8 +125,39 @@
 .ap-form .field--small { grid-column: span 1; }
 .ap-form .field--wide { grid-column: 1 / -1; }
 .ap-form .btn { justify-content: center; margin-top: 0.3rem; }
+.ap-set {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.ap-set legend {
+  grid-column: 1 / -1;
+  margin-bottom: 0.5rem;
+  padding: 0;
+  font-family: var(--display);
+  font-weight: 650;
+  font-size: 1.25rem;
+  color: var(--coral);
+}
+.ap-set .field { grid-column: span 2; }
+.ap-set .field--small { grid-column: span 1; }
+.ap-set .field--wide { grid-column: 1 / -1; }
+.ap-person {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr auto;
+  align-items: end;
+  gap: 0.6rem;
+}
+.ap-person .field { grid-column: auto; }
+.ap-person__remove { margin: 0 0 0.55rem; }
+.ap-add { grid-column: 1 / -1; justify-self: start; margin: 0; }
 
-.ap-done__turtle { width: 140px; margin: 0 auto 0.5rem; animation: bob 4s ease-in-out infinite; }
+.ap-done__turtle { width: 140px; margin: 0 auto 1rem; animation: bob 4s ease-in-out infinite; }
 .ap-link {
   margin-top: 0.3rem;
   padding: 0.2rem 0.4rem;
@@ -145,8 +174,13 @@
 }
 
 @media (max-width: 520px) {
-  .ap-form .field { grid-column: 1 / -1; }
-  .ap-form .field--small { grid-column: span 2; }
+  .ap-form .field, .ap-set .field { grid-column: 1 / -1; }
+  .ap-form .field--small, .ap-set .field--small { grid-column: span 2; }
+  .ap-set .field--half { grid-column: span 2; }
+  .ap-person .field { grid-column: auto; }
+  .ap-person { grid-template-columns: 1fr 1fr; padding-bottom: 0.6rem; border-bottom: 2px dashed rgba(0, 59, 157, 0.25); }
+  .ap-person .field:nth-child(3) { grid-column: 1 / -1; }
+  .ap-person__remove { grid-column: 1 / -1; justify-self: start; margin: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
