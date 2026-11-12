@@ -4,7 +4,7 @@ Website for Lucy Appleby's bat mitzvah (March 20, 2027, Park Slope). Read `READM
 
 ## Stack
 
-Vite + Vue 3 (script setup, plain JS), Supabase (Postgres, Auth, Storage), Cloudflare Pages with one Pages Function for Postmark. No other backend.
+Vite + Vue 3 (script setup, plain JS), Supabase (Postgres, Auth, Storage), Cloudflare Pages with one Pages Function for CloudMailin. No other backend.
 
 ## Canonical files
 
@@ -15,7 +15,7 @@ Vite + Vue 3 (script setup, plain JS), Supabase (Postgres, Auth, Storage), Cloud
 - `src/styles/base.css`: color tokens, fonts, buttons, fields. `dive.css` is Meet Lucy, `address.css` the contact and Coming soon pages, `admin.css` the admin.
 - `shared/public-config.js`: Supabase URL and publishable key. Imported by both `src/` and `functions/`. Public values only.
 - `supabase/migrations/`: the schema. The hosted database must always match these files.
-- `functions/api/send-email.js`: the only server code and the only place secrets are read.
+- `functions/api/send-email.js`: the only server code and the only place secrets are read. Sends through CloudMailin's HTTP API using the SMTP credentials (`CLOUDMAILIN_SMTP_URL`, or `CLOUDMAILIN_SMTP_USERNAME` and `CLOUDMAILIN_SMTP_PASSWORD`), plus `EMAIL_FROM`. Keep each call under the free plan's 50 outgoing requests (`MAX_MESSAGES`, and the chunk size in `src/admin/Email.vue`). `email_log.postmark_id` holds the CloudMailin message id.
 
 ## Rules
 
@@ -48,7 +48,7 @@ Update `README.md` and this file, and remove anything in them that is no longer 
 
 ## Status
 
-Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game (shared top 10 in `pearl_scores`) while off, animated save the date at `/movie` with an MP4 export script, admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through Postmark, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
+Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game (shared top 10 in `pearl_scores`) while off, animated save the date at `/movie` with an MP4 export script, admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through CloudMailin, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
 
 Hidden for now: Lucy's sketchbook section (component kept, admin still works).
 
@@ -56,4 +56,4 @@ Guesses to confirm with the family: the order of the photos in `timeline` (no da
 
 Not built yet: RSVP pages on `/i/<token>` (tables `events`, `household_events`, `rsvps` and `households.personal_message` are ready), hotels and schedule pages, save the date and invitation emails.
 
-Not yet verified against the live services: admin sign in with a real account, and a real Postmark send. Both were tested with stand-ins only. The Meet Lucy switch starts off.
+Not yet verified against the live services: admin sign in with a real account, and a real CloudMailin send. Both were tested with stand-ins only. The Meet Lucy switch starts off.

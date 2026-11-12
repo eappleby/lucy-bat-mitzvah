@@ -82,7 +82,7 @@ async function sendTest() {
   try {
     const msg = { ...preview.value, to: props.userEmail, subject: `Test: ${preview.value.subject}` }
     const out = await api('POST', { messages: [msg] })
-    out.results[0].ok ? toast(`Test sent to ${props.userEmail}`) : toast(`Postmark said: ${out.results[0].error}`, 'error')
+    out.results[0].ok ? toast(`Test sent to ${props.userEmail}`) : toast(`CloudMailin said: ${out.results[0].error}`, 'error')
   } catch (e) {
     toast(e.message, 'error')
   }
@@ -96,8 +96,8 @@ async function sendAll() {
   const list = recipients.value
   const all = []
   try {
-    for (let i = 0; i < list.length; i += 50) {
-      const chunk = list.slice(i, i + 50)
+    for (let i = 0; i < list.length; i += 25) {
+      const chunk = list.slice(i, i + 25)
       const out = await api('POST', { messages: chunk.map(build) })
       out.results.forEach((r, j) => all.push({ household: chunk[j], ...r }))
     }
@@ -128,12 +128,13 @@ async function sendAll() {
     <div class="atools"><h2>Contact info email</h2></div>
     <p class="ahint">Each household gets its own email showing what we have for them (address, phone, email, family). If everything is there, it asks "Still correct?" with Confirm info and Update info buttons. If something is missing, it marks it and asks them to add it. Every answer is saved to the guest list.</p>
 
-    <p v-if="status?.configured" class="anote anote--ok">Postmark is connected. Emails go out from {{ status.from }}.</p>
+    <p v-if="status?.configured" class="anote anote--ok">CloudMailin is connected. Emails go out from {{ status.from }}.</p>
     <div v-else-if="status" class="anote anote--warn">
-      Postmark is not connected yet. In Cloudflare Pages, open Settings, then Variables and Secrets, and add
-      <code>POSTMARK_SERVER_TOKEN</code> (as a secret) and <code>POSTMARK_FROM</code>, then redeploy.
+      CloudMailin is not connected yet. In Cloudflare Pages, open Settings, then Variables and Secrets, and add
+      <code>CLOUDMAILIN_SMTP_URL</code> (as a secret) and <code>EMAIL_FROM</code>, then redeploy.
     </div>
     <p v-else-if="statusError" class="anote anote--warn">{{ statusError }}</p>
+    <p v-if="status?.testMode" class="anote anote--warn">CloudMailin test mode is on. Messages are checked but not delivered.</p>
     <p v-if="isLocal" class="anote anote--warn">Links and pictures in these emails point to {{ origin }}. Send from the deployed site so they work for guests.</p>
 
     <div class="aemail">

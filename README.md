@@ -39,7 +39,7 @@ Open http://localhost:5173. The admin is at http://localhost:5173/admin.
 
 - **Frontend:** Vite and Vue 3, built to static files.
 - **Data:** Supabase (project `vmiubhxtijtsunqouwvk`). There is no server of our own.
-- **Hosting:** Cloudflare Pages. One Pages Function sends email through Postmark.
+- **Hosting:** Cloudflare Pages. One Pages Function sends email through CloudMailin.
 
 ```
 index.html
@@ -59,7 +59,7 @@ src/
   admin/                    The admin, loaded only at /admin
   admin/emailTemplate.js    The contact email
   styles/                   base.css (shared), dive.css, address.css, admin.css
-functions/api/send-email.js Postmark sender, admin only
+functions/api/send-email.js CloudMailin sender, admin only
 public/art/                 Illustrations cut from the save the date
 public/photos/              Web sizes of the family photos
 public/journey/             8-bit scenery and sprites (made by npm run journey)
@@ -135,20 +135,26 @@ Connect the GitHub repo once, and every push to `main` deploys on its own.
 
 To deploy from this machine instead: `npx wrangler login` once, then `npm run deploy`.
 
-### 4. Connect Postmark
+### 4. Connect CloudMailin
 
-In the Pages project open **Settings > Variables and Secrets** and add these for **Production**, each as type **Secret**:
+In the Pages project open **Settings > Variables and Secrets** and add these for **Production**:
 
-| Name | Value |
-| --- | --- |
-| `POSTMARK_SERVER_TOKEN` | The Server API token from Postmark |
-| `POSTMARK_FROM` | A sender Postmark has verified, for example `Lucy's Bat Mitzvah <hello@yourdomain.com>` |
-| `POSTMARK_REPLY_TO` | Optional |
-| `POSTMARK_MESSAGE_STREAM` | Optional, defaults to `outbound` |
+| Name | Type | Value |
+| --- | --- | --- |
+| `CLOUDMAILIN_SMTP_URL` | Secret | The SMTP URL from CloudMailin, `smtp://USERNAME:PASSWORD@smtp.cloudmta.net:587?starttls=true` |
+| `EMAIL_FROM` | Text | An address on the verified sending domain, for example `Lucy's Bat Mitzvah <lucy@lucybatmitzvah.com>` |
+| `EMAIL_REPLY_TO` | Text | Optional |
+| `CLOUDMAILIN_TEST_MODE` | Text | Optional. `true` makes CloudMailin check each message without delivering it. |
 
-If the dashboard will not let you add them, use `npx wrangler pages secret put POSTMARK_SERVER_TOKEN` (and so on) from this folder.
+Instead of the URL you can add `CLOUDMAILIN_SMTP_USERNAME` and `CLOUDMAILIN_SMTP_PASSWORD` as two secrets. The function sends through CloudMailin's HTTP API, which takes the same username and password.
+
+From the command line: `npx wrangler pages secret put CLOUDMAILIN_SMTP_URL` (and so on) from this folder.
 
 Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.vars`, fill it in, and run `npm run preview:cf`.
+
+The admin sends 25 emails per request because a Pages Function on the free plan can make 50 outgoing requests per call. CloudMailin also limits how many messages an account sends per hour; the limit is shown next to the domain in CloudMailin.
+
+The `email_log.postmark_id` column holds CloudMailin's message id. The name is left over from Postmark.
 
 ## Everyday jobs
 
