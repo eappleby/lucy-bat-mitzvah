@@ -141,7 +141,9 @@ for (const x of [11450, 11600, 11750]) N(x - 200, x + 200, S.torii(x, 420 - (x -
 // ---------- Costa Rica ----------
 chapter('costa', 11850, 12950)
 F(far(11800), far(12500), S.volcano(far(12000), 600, 420, fade('#6b8f5a', 0.2)))
-F(far(12150), far(13000), S.ocean(far(12150), far(13000), G - 170))
+// The open sea out past the beach: a headland slopes down on the left and the water runs
+// off past the edge of the screen, so it reads as the ocean rather than a pool.
+F(far(12050), far(15200), path(`M${far(12050)} ${G} L ${far(12050) + 90} ${G - 150} L ${far(15200)} ${G - 150} L ${far(15200)} ${G} Z`, { fill: '#56b8e6', gap: 10, sw: 1.8, stroke: '#3a9fd2' }) + speckle(far(12050) + 120, G - 140, far(15200) - far(12050) - 140, 120, 60, ['#ffffff', '#a9dcf4'], 16, 12050))
 N(11860, 12160, S.ground(11860, 12160, 'dirt'))
 N(11850, 12160, S.jungle(11850, 4, 7))
 N(11850, 12010, S.palm(11920, 460))
@@ -149,7 +151,8 @@ N(11900, 12200, S.sloth(12040, G - 470) + S.toucan(12120, G - 360))
 
 // ---------- the beach ----------
 N(12160, 12300, S.ground(12160, 12300, 'sand'))
-N(12300, 12720, rect(12300, G - 6, 420, 1000 - G + 6, { fill: '#4fb3e8', gap: 9, sw: 2, stroke: '#2a8cc4' }) + speckle(12300, G + 4, 420, 120, 40, ['#ffffff', '#b9e3f6'], 16, 12300))
+// The water Lucy boogie boards in: the sand slopes down into it at both ends, with foam at the edge.
+N(12300, 12720, S.ground(12300, 12720, 'sand') + path(`M12290 ${G + 10} L 12350 ${G - 6} L 12670 ${G - 6} L 12730 ${G + 10} L 12730 1000 L 12290 1000 Z`, { fill: '#4fb3e8', gap: 9, sw: 2, stroke: '#2a8cc4' }) + line(12345, G - 6, 12675, G - 6, { stroke: '#ffffff', sw: 6 }) + speckle(12340, G + 8, 340, 110, 36, ['#ffffff', '#b9e3f6'], 16, 12300))
 N(12720, 13000, S.ground(12720, 13000, 'sand'))
 N(12160, 12320, S.umbrella(12240))
 N(12820, 13000, S.palm(12900, 420))

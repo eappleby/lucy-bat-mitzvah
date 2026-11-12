@@ -173,11 +173,9 @@ function scene() {
     }
   } else if (form === 'traveler') {
     if (W.zoneAt(x, 'water')) {
-      const bob = Math.round(Math.sin((act === 'boogie' ? ap * 6 : x / 80) * Math.PI) * 2)
-      sprites.push({ name: 'wave', pose: 'all', i: Math.floor(clock.value * 3) % 2, x: x - 10, y: G + 30 + bob * PX, shadow: false })
-      sprites.push({ name: 'board', pose: 'all', i: 0, x: x + 4, y: G - 60 + bob * PX, shadow: false })
-      sprites.push({ name: 'prone', pose: 'kick', i: Math.floor(clock.value * 6) % 2, x: x + 4, y: G - 112 + bob * PX, shadow: false, center: true })
-      if (act === 'boogie') for (let k = 0; k < 4; k++) front.push({ kind: 'sprite', name: 'sparkle', i: k % 2, x: x + 160 - ((ap * 900 + k * 60) % 240), y: G - 120 - ((ap * 700 + k * 33) % 60) })
+      // Lying on her belly on the board, kicking, bobbing on the water.
+      const bob = Math.round(Math.sin((act === 'boogie' ? ap * 6 : x / 80) * Math.PI))
+      sprites.push({ name: 'boogie', pose: 'all', i: Math.floor(clock.value * (go || act === 'boogie' ? 6 : 2)) % 2, x: x + 10, y: G + 16 + bob * PX, shadow: false })
     } else {
       const carrying = x < 12150
       sprites.push({ name: 'traveler', pose: go ? (carrying ? 'pull' : 'walk') : 'idle', i: go ? step() : idle(), x, y: gy })

@@ -40,7 +40,7 @@ export const acts = [
 export const zones = [
   { id: 'skate', from: 7050, to: 7450 },
   { id: 'beach', from: 12150, to: 12850 },
-  { id: 'water', from: 12300, to: 12720 },
+  { id: 'water', from: 12345, to: 12675 },
   { id: 'mud', from: 14250, to: 14900 },
 ]
 

@@ -409,6 +409,43 @@ function pram(frame) {
   return sp.outline()
 }
 
+function boogie(f) {
+  const sp = new Sprite(36, 16)
+  const skin = SKIN.lucy
+  const hair = HAIR.lucy
+  // legs first, kicking up and down behind her
+  const back = f ? 7 : 10
+  const front = f ? 10 : 7
+  sp.line(13, 10, 7, back, skin, 2)
+  sp.line(7, back, 3, back - 1, skin, 2)
+  sp.line(13, 11, 7, front, shade(skin, 0.1), 2)
+  sp.line(7, front, 3, front + 1, shade(skin, 0.1), 2)
+  // a little splash at her feet
+  sp.set(1, f ? 6 : 12, '#ffffff')
+  sp.set(2, f ? 5 : 13, '#ffffff')
+  // the board
+  sp.rect(6, 12, 25, 2, '#ffd23f')
+  sp.rect(7, 14, 23, 1, '#e5a92a')
+  sp.rect(31, 12, 2, 2, '#ffd23f')
+  sp.set(33, 12, '#ffd23f')
+  sp.rect(9, 12, 20, 1, '#fff0a8')
+  // swimsuit and body, lying flat
+  sp.rect(12, 9, 4, 3, '#fc564b')
+  sp.rect(16, 8, 7, 4, '#4bb5b2')
+  sp.rect(17, 8, 5, 1, '#7fd3cf')
+  // arm reaching forward to hold the nose of the board
+  sp.line(22, 10, 30, 11, skin, 2)
+  // head, up and looking ahead, with her hair streaming back
+  sp.disc(26, 6, 3, 3, skin)
+  sp.rect(21, 3, 5, 3, hair)
+  sp.rect(22, 2, 5, 2, hair)
+  sp.rect(19, 5, 4, 2, hair)
+  sp.set(18, 6, hair)
+  sp.set(27, 5, '#1b1d3a')
+  sp.set(28, 7, '#e88a7a')
+  return sp.outline()
+}
+
 function simple(w, h, draw) {
   const sp = new Sprite(w, h)
   draw(sp)
@@ -420,15 +457,9 @@ export function things() {
     worm: [0, 1, 2, 1].map(worm),
     pram: [0, 1].map(pram),
     suitcase: [simple(12, 13, (s) => { s.rect(1, 1, 10, 9, '#fc564b'); s.rect(1, 4, 10, 1, '#c8423a'); s.disc(3, 11, 1, 1, '#3a3f4a'); s.disc(9, 11, 1, 1, '#3a3f4a') })],
-    board: [simple(22, 5, (s) => { s.rect(2, 1, 18, 3, '#4fd16e'); s.rect(1, 2, 20, 1, '#4fd16e'); s.rect(4, 2, 14, 1, '#2fa24e') })],
-    wave: [0, 1].map((f) => simple(48, 18, (s) => {
-      for (let x = 0; x < 48; x++) {
-        const top = 12 - Math.round(Math.max(0, Math.sin(((x + f * 3) / 48) * Math.PI)) * 9)
-        s.rect(x, top, 1, 18 - top, '#4bb3e6')
-        s.set(x, top, '#ffffff')
-        if (x % 5 === f) s.set(x, top + 2, '#a9dcf4')
-      }
-    })),
+    // Lucy boogie boarding, seen from the side: lying on her belly on the board, head up,
+    // arms holding the nose, feet kicking behind her. Two frames for the kick.
+    boogie: [0, 1].map(boogie),
     splat: [simple(6, 5, (s) => { s.disc(3, 2, 2, 1.5, '#7b5233') })],
     note: [simple(6, 8, (s) => { s.disc(2, 6, 1.6, 1.2, '#003b9d'); s.rect(3, 0, 1, 6, '#003b9d'); s.rect(4, 0, 2, 1, '#003b9d') })],
     sparkle: [0, 1].map((f) => simple(7, 7, (s) => {
@@ -467,9 +498,6 @@ export function buildSprites() {
     }
     sheets[name] = { frames, index, ax: 20, ay: frames[0].h - 2, leg: body(spec).leg }
   }
-  // Lucy boogie boarding: her standing frames with arms overhead, turned on her side
-  const prone = [{ legB: -10, legF: 10, armB: 172, armF: 188 }, { legB: 10, legF: -10, armB: 172, armF: 188 }].map((p) => person(CAST.traveler, p).rotated())
-  sheets.prone = { frames: prone, index: { kick: [0, 1] }, ax: Math.round(prone[0].w / 2), ay: Math.round(prone[0].h / 2) }
   for (const [name, frames] of Object.entries(things())) sheets[name] = { frames, index: { all: frames.map((_, i) => i) }, ax: Math.floor(frames[0].w / 2), ay: frames[0].h - 1 }
   return sheets
 }
