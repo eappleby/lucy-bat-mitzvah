@@ -576,7 +576,6 @@ onUnmounted(() => {
   <section class="journey" data-zone="How I got here">
     <div class="zone__inner journey__intro">
       <h2 class="zone__title">{{ copy.journey.heading }}</h2>
-      <p class="zone__body">{{ copy.journey.body }}</p>
       <Pearl id="journey-a" class="pearl--journey-a" />
     </div>
 

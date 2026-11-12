@@ -5,7 +5,7 @@ The website for Lucy Appleby's bat mitzvah on March 20, 2027 in Park Slope, Broo
 Right now the site does three jobs:
 
 1. **Checks everyone's contact info.** Each household gets a personal email, "Contact info up to date?", that shows what we have for them (address, phone, email, and family with relationships). When everything is there it offers Confirm info and Update info. Anything missing is marked "We still need this" and the button becomes Add missing info, so people fill it in rather than confirm an incomplete card. When we have no address, it asks for their contact info instead.
-2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that you walk through with the arrows, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive) until it is switched on in the admin.
+2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that you walk through with the arrows, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive, with a shared top 10 of arcade style initials) until it is switched on in the admin.
 3. **An admin** for the guest list, the contact emails, and the Meet Lucy switch.
 
 RSVPs by personal link, hotels, and the schedule come later. The database tables for RSVPs already exist.
@@ -88,7 +88,7 @@ Each household has one main contact (the first person, unless you pick another i
 
 - Every table has row level security turned on.
 - Visitors cannot read or write any table. The one exception is published rows of `lucy_posts`.
-- Visitors act only through database functions: `get_invite`, `confirm_info`, `submit_contact`, `send_bottle`, `get_public_bottles`, `get_site_status`.
+- Visitors act only through database functions: `get_invite`, `confirm_info`, `submit_contact`, `send_bottle`, `get_public_bottles`, `get_site_status`, `get_pearl_scores`, `submit_pearl_score`.
 - `get_invite` returns a household's contact card (envelope name, address, phone, email, the main contact's name, and family names with relationships) to whoever holds that household's personal link, so they can check it. Notes, groups, and other households are never returned, and nothing is returned without a valid token.
 - `submit_contact` with a personal token updates that household right away, including adding and removing family members. Every send is also kept in `address_submissions` as a record.
 - The Coming soon switch is checked in the browser. Meet Lucy's code is only downloaded when it is shown, but its photos in `public/photos/` can still be opened by exact address.
@@ -112,7 +112,7 @@ Repeat steps 1 and 2 for each person who should have access.
 
 ### 2. Database changes
 
-Every file in `supabase/migrations/` is already applied to the hosted project, through `20261112020000_contact_without_birthday.sql`. To change it:
+Every file in `supabase/migrations/` is already applied to the hosted project, through `20261112030000_pearl_scores.sql`. To change it:
 
 ```sh
 npm run db:link          # one time, asks for the database password
@@ -152,6 +152,7 @@ Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.v
 
 ## Everyday jobs
 
+- **Pearl dive top 10:** scores live in the `pearl_scores` table. A score that makes the top 10 asks for up to 3 letters or digits. To remove one, delete its row in Supabase (**Table Editor > pearl_scores**).
 - **Open Meet Lucy to everyone:** Admin > Guest list > Open it to everyone. Switch to Coming soon puts it back.
 - **Send the contact emails:** Admin > Email. Pick who gets it (not emailed yet, not confirmed yet, or everyone), click a row to preview that household's email, send yourself a test, then send. There is one subject for households we have info for and another for those we don't. The email images load from the live site, so send from the deployed admin, not localhost.
 - **Watch the answers:** Admin > Guest list shows each household as Confirmed, Not confirmed, or Needs address. Info from the shared `/address` link arrives in Admin > Inbox; saving it to a household fills in the address and adds any family members it does not have yet.

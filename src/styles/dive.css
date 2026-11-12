@@ -710,7 +710,6 @@ button.page:hover { transform: rotate(0deg) scale(1.04); }
   color: var(--sun);
   transform: rotate(1.5deg);
 }
-.finale__date { margin: 1.4rem 0 0; color: #d6ecff; font-size: 1.25rem; }
 
 .floor__sand {
   position: absolute;

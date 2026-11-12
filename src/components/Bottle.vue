@@ -46,7 +46,6 @@ function again() {
     <div class="zone__inner bottle-bay__grid">
       <div>
         <h2 class="zone__title">{{ copy.bottle.heading }}</h2>
-        <p class="zone__body">{{ copy.bottle.body }}</p>
 
         <div v-if="bottles.length" class="floaters">
           <button v-for="(b, i) in bottles.slice(0, 12)" :key="b.id" class="floater" :style="{ '--delay': -(i * 0.8) + 's' }" @click="reading = b">

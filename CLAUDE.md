@@ -48,7 +48,7 @@ Update `README.md` and this file, and remove anything in them that is no longer 
 
 ## Status
 
-Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game while off, animated save the date at `/movie` with an MP4 export script, admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through Postmark, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
+Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game (shared top 10 in `pearl_scores`) while off, animated save the date at `/movie` with an MP4 export script, admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through Postmark, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
 
 Hidden for now: Lucy's sketchbook section (component kept, admin still works).
 

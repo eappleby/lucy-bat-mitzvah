@@ -1,9 +1,11 @@
 <script setup>
 // "Pearl dive": a tiny 8-bit game for the Coming soon page.
 // Tap, click, or press space to swim up. Grab the pearl in each gap, dodge the coral.
+// A score good enough for the shared top 10 asks for arcade style initials.
 // Everything is drawn into a 192 x 128 canvas that CSS scales up without smoothing.
-import { onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import '@fontsource/press-start-2p/400.css'
+import { supabase } from '../../lib/supabase.js'
 
 const W = 192
 const H = 128
@@ -18,6 +20,53 @@ const START_SPEED = 52
 const TURTLE_X = 46
 
 const canvas = ref(null)
+
+// ---------- the shared top 10 ----------
+const top = ref([]) // [{ initials, score }]
+const pending = ref(0) // a score waiting for initials
+const initials = ref('')
+const saving = ref(false)
+const saveError = ref('')
+const mine = ref(null) // the row just saved, to highlight it
+const initialsInput = ref(null)
+
+async function loadTop() {
+  const { data } = await supabase.rpc('get_pearl_scores')
+  if (Array.isArray(data)) top.value = data
+}
+const qualifies = (n) => n > 0 && (top.value.length < 10 || n > top.value[top.value.length - 1].score)
+
+function gameOver(n) {
+  if (!qualifies(n)) return
+  pending.value = n
+  saveError.value = ''
+  mine.value = null
+  nextTick(() => initialsInput.value?.focus({ preventScroll: true }))
+}
+
+async function saveScore() {
+  const tag = initials.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3)
+  if (!tag) {
+    saveError.value = 'Type up to 3 letters.'
+    return
+  }
+  saving.value = true
+  const { data, error } = await supabase.rpc('submit_pearl_score', { p_initials: tag, p_score: pending.value })
+  saving.value = false
+  if (error || !Array.isArray(data)) {
+    saveError.value = 'That did not save. Try again in a moment.'
+    return
+  }
+  top.value = data
+  mine.value = { initials: tag, score: pending.value }
+  pending.value = 0
+}
+const skip = () => (pending.value = 0)
+function onInitials(e) {
+  // Letters and digits only, up to 3, shown in capitals as they type.
+  initials.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3)
+  e.target.value = initials.value
+}
 const reduced = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 
 let ctx
@@ -214,6 +263,7 @@ function update(dt) {
       best = score
       saveBest()
     }
+    gameOver(score)
   }
 }
 
@@ -363,6 +413,7 @@ function frame(now) {
 }
 
 function onKey(e) {
+  if (e.target.closest?.('input, textarea, button')) return // typing initials, or pressing a button
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
     // Only take over the space bar while the game is on screen.
     const r = canvas.value?.getBoundingClientRect()
@@ -377,6 +428,9 @@ onMounted(async () => {
   ctx.imageSmoothingEnabled = false
   buildSprites()
   reset()
+  loadTop()
+  // For test scripts in development only: pretend a game just ended with this score.
+  if (import.meta.env.DEV) window.__pearl = { over: (n) => gameOver(n) }
   try {
     await document.fonts.load('8px "Press Start 2P"')
   } catch {
@@ -393,22 +447,57 @@ onUnmounted(() => {
 
 <template>
   <div class="pd">
-    <canvas
-      ref="canvas"
-      class="pd__screen"
-      :width="W"
-      :height="H"
-      tabindex="0"
-      role="img"
-      aria-label="Pearl dive, a small game. Tap, click, or press space to swim up, grab the pearls, and dodge the coral."
-      @pointerdown.prevent="flap"
-    ></canvas>
-    <p class="pd__help">Tap, click, or press space to swim. Grab the pearls and dodge the coral.</p>
+    <div class="pd__game">
+      <canvas
+        ref="canvas"
+        class="pd__screen"
+        :width="W"
+        :height="H"
+        tabindex="0"
+        role="img"
+        aria-label="Pearl dive, a small game. Tap, click, or press space to swim up, grab the pearls, and dodge the coral."
+        @pointerdown.prevent="flap"
+      ></canvas>
+      <p class="pd__help">Tap, click, or press space to swim. Grab the pearls and dodge the coral.</p>
+    </div>
+
+    <aside class="pd__board" aria-label="Top 10 scores">
+      <h2 class="pd__title">Top 10</h2>
+      <form v-if="pending" class="pd__entry" @submit.prevent="saveScore">
+        <p class="pd__new">New high score! {{ pending }}</p>
+        <label class="pd__label" for="pd-initials">Your initials</label>
+        <div class="pd__row">
+          <input id="pd-initials" ref="initialsInput" :value="initials" class="pd__input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" @input="onInitials" />
+          <button class="pd__btn" :disabled="saving">{{ saving ? '...' : 'Save' }}</button>
+        </div>
+        <p v-if="saveError" class="pd__error" role="alert">{{ saveError }}</p>
+        <button type="button" class="pd__skip" @click="skip">Skip</button>
+      </form>
+      <ol v-if="top.length" class="pd__list">
+        <li v-for="(r, i) in top" :key="i" :class="{ 'is-mine': mine && r.initials === mine.initials && r.score === mine.score }">
+          <span class="pd__rank">{{ i + 1 }}</span>
+          <span class="pd__who">{{ r.initials }}</span>
+          <span class="pd__pts">{{ r.score }}</span>
+        </li>
+      </ol>
+      <p v-else class="pd__empty">No scores yet. Be the first!</p>
+    </aside>
   </div>
 </template>
 
 <style scoped>
-.pd { margin: 0 auto; max-width: 576px; }
+.pd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 13rem;
+  gap: 1.4rem;
+  align-items: start;
+  margin: 0 auto;
+  max-width: 820px;
+  text-align: left;
+}
+@media (max-width: 760px) {
+  .pd { grid-template-columns: 1fr; max-width: 576px; }
+}
 .pd__screen {
   display: block;
   width: 100%;
@@ -423,5 +512,58 @@ onUnmounted(() => {
   touch-action: manipulation;
 }
 .pd__screen:focus-visible { outline: 3px solid var(--sun, #ffd23f); outline-offset: 3px; }
-.pd__help { margin: 0.9rem 0 0; font-size: 1.1rem; color: #33507e; }
+.pd__help { margin: 0.9rem 0 0; font-size: 1.1rem; color: #33507e; text-align: center; }
+
+/* The top 10, styled like an arcade high score table. */
+.pd__board {
+  padding: 1rem 1rem 1.1rem;
+  background: #1b1d3a;
+  border: 4px solid var(--ink);
+  border-radius: 6px;
+  box-shadow: 6px 7px 0 var(--coral);
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.pd__title { margin: 0 0 0.8rem; font: inherit; font-size: 0.85rem; color: #fff4b0; text-align: center; }
+.pd__list { display: grid; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.pd__list li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 0.4rem; }
+.pd__list li.is-mine { color: #fff4b0; animation: pd-blink 0.8s steps(1) 6; }
+.pd__rank { color: #7cc6ef; }
+.pd__pts { text-align: right; }
+.pd__empty { margin: 0; text-align: center; color: #c9d3ff; }
+.pd__entry { margin: 0 0 1rem; padding-bottom: 0.9rem; border-bottom: 2px dashed #3d4380; text-align: center; }
+.pd__new { margin: 0 0 0.6rem; color: #ff8a7a; }
+.pd__label { display: block; margin-bottom: 0.4rem; }
+.pd__row { display: flex; gap: 0.4rem; justify-content: center; }
+.pd__input {
+  width: 5.2em;
+  padding: 0.45rem 0.3rem;
+  background: #fff;
+  border: 3px solid #fff4b0;
+  border-radius: 4px;
+  color: #1b1d3a;
+  font: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.pd__btn, .pd__skip {
+  padding: 0.45rem 0.6rem;
+  background: var(--coral);
+  border: 3px solid #fff;
+  border-radius: 4px;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.pd__skip { margin-top: 0.6rem; padding: 0.2rem 0.5rem; background: transparent; border-color: transparent; color: #c9d3ff; text-decoration: underline; }
+.pd__error { margin: 0.5rem 0 0; color: #ff8a7a; }
+.pd__btn:focus-visible, .pd__skip:focus-visible, .pd__input:focus-visible { outline: 3px solid #ffd23f; outline-offset: 2px; }
+@keyframes pd-blink { 50% { color: #fff; } }
+@media (prefers-reduced-motion: reduce) {
+  .pd__list li.is-mine { animation: none; }
+}
 </style>

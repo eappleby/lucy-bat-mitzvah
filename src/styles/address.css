@@ -62,7 +62,7 @@
   color: var(--coral);
   transform: rotate(-2deg);
 }
-.cs-card { max-width: 720px; }
+.cs-card { max-width: 960px; }
 .ap-wave { width: 160px; margin: 0.5rem auto 0.3rem; }
 
 .ap-body {

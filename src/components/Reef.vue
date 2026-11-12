@@ -22,7 +22,6 @@ function pop(i) {
     <img class="reef__coral reef__coral--r" src="/art/coral-orange-b.webp" alt="" loading="lazy" />
     <div class="zone__inner">
       <h2 class="zone__title">{{ copy.reef.heading }}</h2>
-      <p class="zone__body">{{ copy.reef.body }}</p>
       <div class="bubbles">
         <button
           v-for="(p, i) in friends"

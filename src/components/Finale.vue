@@ -1,5 +1,5 @@
 <script setup>
-import { copy, event } from '../content.js'
+import { copy } from '../content.js'
 import Pearl from './Pearl.vue'
 </script>
 
@@ -9,7 +9,6 @@ import Pearl from './Pearl.vue'
       <img class="finale__clam" src="/art/clam.webp" alt="" />
       <h2 class="finale__title">{{ copy.finale.heading }}</h2>
       <p class="finale__body">{{ copy.finale.body }}</p>
-      <p class="finale__date">{{ event.whose }} {{ event.title.join(' ') }}, {{ event.dateText }}</p>
     </div>
 
     <div class="floor__sand" aria-hidden="true">

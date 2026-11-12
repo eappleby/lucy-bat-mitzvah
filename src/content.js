@@ -15,7 +15,7 @@ export const copy = {
   // What / shows while the Meet Lucy page is switched off in the admin.
   comingSoon: {
     heading: 'Coming soon!',
-    body: 'Lucy is still getting this page ready. Play a round of Pearl dive while you wait.',
+    body: 'Lucy is still getting this page ready.',
   },
   // The contact info page (/i/<token> and /address) and its email.
   contact: {
@@ -44,23 +44,16 @@ export const copy = {
 
   shallows: {
     heading: "Hi, I'm Lucy!",
-    body: [
-      "I'm becoming a bat mitzvah on March 20, 2027, and I want you there.",
-      'Scroll down to see how I got here. There are 7 pearls hiding on the way.',
-    ],
+    body: ["I'm becoming a bat mitzvah on March 20, 2027, and I want you there."],
     timelineHeading: 'Me, over the years',
   },
-  reef: { heading: 'The reef crew', body: 'My friends. Pop a bubble to see who is inside.' },
+  reef: { heading: 'The reef crew' },
   journey: {
     heading: 'How I got here',
-    body: 'Hold the right arrow and I will walk you through it.',
     hint: 'Hold right arrow to walk',
     hintTouch: 'Hold the arrow or swipe',
   },
-  bottle: {
-    heading: 'Message in a bottle',
-    body: 'Write Lucy a note and toss it in. She reads every one.',
-  },
+  bottle: { heading: 'Message in a bottle' },
   finale: {
     heading: 'Invitation to follow.',
     body: 'Stay tuned!',
