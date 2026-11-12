@@ -362,7 +362,7 @@
 }
 .aguest > input { flex: 1 1 8rem; min-width: 0; }
 .aguest__main { display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; white-space: nowrap; }
-.aguest__bday { display: flex; gap: 0.3rem; }
+
 
 .atoast {
   position: fixed;

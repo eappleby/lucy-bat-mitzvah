@@ -79,30 +79,49 @@
   transform: rotate(-1deg);
 }
 
-/* Everything we have for them, on one index card. */
+/* Everything we have for them, on one index card: centered, a heading per section,
+   and a dashed note where something is missing. */
 .ap-info {
   position: relative;
   display: grid;
-  gap: 1rem;
-  max-width: 24rem;
-  margin: 0 auto 1.8rem;
-  padding: 1.3rem 1.6rem 1.4rem;
+  gap: 1.5rem;
+  max-width: 26rem;
+  margin: 0 auto 2rem;
+  padding: 1.6rem 1.6rem 1.8rem;
   background: var(--pearl);
   border: 3px solid var(--ink);
   border-radius: var(--wobble);
   font-size: 1.3rem;
-  line-height: 1.3;
-  text-align: left;
+  line-height: 1.35;
+  text-align: center;
   transform: rotate(0.6deg);
 }
 .ap-info__block dt {
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.3rem;
   font-family: var(--display);
   font-weight: 650;
-  font-size: 1.05rem;
+  font-size: 1.45rem;
   color: var(--coral);
 }
 .ap-info__block dd { margin: 0; }
+.ap-info__block dd.ap-info__missing {
+  display: inline-block;
+  padding: 0.2rem 0.8rem;
+  border: 2px dashed var(--coral);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  color: var(--coral);
+}
+/* "We still need this" next to a field in the form */
+.ap-need {
+  margin-left: 0.3rem;
+  font-family: var(--hand, inherit);
+  font-size: 0.95rem;
+  font-style: normal;
+  font-weight: 400;
+  color: var(--coral);
+}
+.field.is-needed input { border-color: var(--coral); border-style: dashed; }
 .ap-choice {
   display: flex;
   flex-wrap: wrap;

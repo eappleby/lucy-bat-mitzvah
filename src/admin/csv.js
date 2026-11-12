@@ -63,7 +63,6 @@ const ALIASES = {
   group_tag: ['group', 'group_tag', 'side', 'category'],
   notes: ['notes', 'note'],
   guests: ['guests', 'people', 'members', 'names'],
-  birthday: ['birthday', 'bday', 'birth date', 'birthdate', 'date of birth'],
 }
 
 // Turns pasted spreadsheet rows into household objects. Returns { households, unknown }.
@@ -80,7 +79,6 @@ export function rowsToHouseholds(rows) {
     })
     if (!h.name) continue
     // "Dana Rivera; Sam Rivera (Spouse); Max Rivera (Son)". The first person is the main contact.
-    const birthday = parseBirthday(h.birthday)
     const guests = (h.guests || '')
       .split(/[;\n]|,(?![^(]*\))/)
       .map((g) => g.trim())
@@ -96,27 +94,11 @@ export function rowsToHouseholds(rows) {
           is_primary: i === 0,
           relationship,
           kind: /\b(son|daughter|child|kid)\b/i.test(relationship || '') ? 'kid' : 'adult',
-          birthday_month: i === 0 ? birthday?.[0] ?? null : null,
-          birthday_day: i === 0 ? birthday?.[1] ?? null : null,
         }
       })
     delete h.guests
-    delete h.birthday
     households.push({ household: h, guests })
   }
   return { households, unknown }
 }
 
-const MONTH_NAMES = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-
-// "July 1", "Jul 1st", "7/1", or "1990-07-01" -> [7, 1]. Anything else -> null.
-export function parseBirthday(text) {
-  const s = (text || '').trim().toLowerCase()
-  if (!s) return null
-  let m, d
-  let x = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  if (x) [m, d] = [+x[2], +x[3]]
-  else if ((x = s.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-]\d{2,4})?$/))) [m, d] = [+x[1], +x[2]]
-  else if ((x = s.match(/^([a-z]+)\.?\s+(\d{1,2})/))) [m, d] = [MONTH_NAMES.indexOf(x[1].slice(0, 3)) + 1, +x[2]]
-  return m >= 1 && m <= 12 && d >= 1 && d <= 31 ? [m, d] : null
-}

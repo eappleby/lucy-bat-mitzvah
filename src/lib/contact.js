@@ -1,18 +1,5 @@
 // Formatting shared by the contact page, the contact email, and the admin.
 
-export const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
-function ordinal(n) {
-  const s = n % 100 >= 11 && n % 100 <= 13 ? 'th' : { 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th'
-  return `${n}${s}`
-}
-
-// birthdayText(7, 1) -> "July 1st"
-export function birthdayText(month, day) {
-  if (!month || !day) return ''
-  return `${MONTHS[month - 1]} ${ordinal(day)}`
-}
-
 // Street, apartment, "City, ST 12345", and the country when it is not the United States.
 export function addressLines(a) {
   if (!a || !a.address1 || !String(a.address1).trim()) return []
@@ -27,3 +14,20 @@ export const familyLine = (p) => fullName(p) + (p.relationship ? ` (${p.relation
 
 // Relationships offered in the family list. People can type anything else.
 export const RELATIONSHIPS = ['Spouse', 'Partner', 'Daughter', 'Son', 'Child', 'Parent', 'Sibling', 'Grandparent', 'Grandchild']
+
+// The blocks on a contact card, in order. Address, phone, and email always show, with a
+// note when we don't have them yet; family shows only when there is someone listed.
+// card: { name, address, phone, email, family }
+export function contactBlocks(card, labels) {
+  const addr = addressLines(card.address)
+  const blocks = [
+    { key: 'address', label: labels.address, lines: addr.length ? [card.name, ...addr].filter(Boolean) : [] },
+    { key: 'phone', label: labels.phone, lines: card.phone ? [card.phone] : [] },
+    { key: 'email', label: labels.email, lines: card.email ? [card.email] : [] },
+    { key: 'family', label: labels.family, lines: (card.family || []).map(familyLine), optional: true },
+  ]
+  return blocks.filter((b) => b.lines.length || !b.optional).map((b) => ({ ...b, missing: !b.lines.length }))
+}
+
+// What the card needs before it can be confirmed.
+export const missingFrom = (blocks) => blocks.filter((b) => b.missing).map((b) => b.key)

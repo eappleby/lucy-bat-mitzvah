@@ -10,7 +10,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { copy } from './content.js'
 import { supabase, friendlyError } from './lib/supabase.js'
-import { MONTHS, RELATIONSHIPS, addressLines, birthdayText, familyLine } from './lib/contact.js'
+import { RELATIONSHIPS, contactBlocks, missingFrom } from './lib/contact.js'
 import './styles/address.css'
 
 const props = defineProps({ token: { type: String, default: '' } })
@@ -27,7 +27,7 @@ const thanksName = ref('')
 
 const form = reactive({
   first_name: '', last_name: '', name: '', address1: '', address2: '', city: '', state: '', postal_code: '',
-  country: 'United States', phone: '', email: '', birthday_month: '', birthday_day: '', family: [], note: '', website: '',
+  country: 'United States', phone: '', email: '', family: [], note: '', website: '',
 })
 
 const h = computed(() => household.value)
@@ -36,25 +36,15 @@ const heading = computed(() => (hasInfo.value ? t.checkHeading : t.newHeading))
 const intro = computed(() => (hasInfo.value ? t.checkIntro : t.newIntro))
 const thanksHeading = computed(() => t.thanksHeading.replace(' {name}', thanksName.value ? ` ${thanksName.value}` : ''))
 
-// What we have, in the order the email shows it. Empty blocks are left out.
+// What we have, in the same order and with the same notes as the email.
 const blocks = computed(() => {
   const x = h.value
   if (!x) return []
-  const bday = birthdayText(x.contact?.birthday_month, x.contact?.birthday_day)
-  return [
-    { label: t.labels.address, lines: [x.name, ...addressLines(x.address)] },
-    { label: t.labels.phone, lines: x.phone ? [x.phone] : [] },
-    { label: t.labels.email, lines: x.email ? [x.email] : [] },
-    { label: t.labels.birthday, lines: bday ? [bday] : [] },
-    { label: t.labels.family, lines: (x.family || []).map(familyLine) },
-  ].filter((b) => b.lines.length)
+  return contactBlocks({ name: x.name, address: x.address, phone: x.phone, email: x.email, family: x.family }, t.labels)
 })
-
-const days = computed(() => {
-  const m = Number(form.birthday_month)
-  const n = m ? new Date(2024, m, 0).getDate() : 31
-  return Array.from({ length: n }, (_, i) => i + 1)
-})
+// Missing pieces send people to the form instead of letting them confirm.
+const missing = computed(() => missingFrom(blocks.value))
+const needs = (key) => missing.value.includes(key)
 
 function fillForm() {
   const x = h.value || {}
@@ -71,8 +61,6 @@ function fillForm() {
     country: a.country || 'United States',
     phone: x.phone || '',
     email: x.email || '',
-    birthday_month: x.contact?.birthday_month || '',
-    birthday_day: x.contact?.birthday_day || '',
     family: (x.family || []).map((p) => ({ ...p })),
   })
 }
@@ -106,10 +94,6 @@ async function save() {
     error.value = 'We need your first name, a street address, and a city.'
     return
   }
-  if (!form.birthday_month !== !form.birthday_day) {
-    error.value = 'Pick both the month and the day of your birthday, or leave both blank.'
-    return
-  }
   busy.value = true
   const info = { ...form, family: form.family.filter((p) => p.first_name.trim()) }
   delete info.website
@@ -131,7 +115,7 @@ async function save() {
       address: { address1: form.address1, address2: form.address2, city: form.city, state: form.state, postal_code: form.postal_code, country: form.country },
       phone: form.phone,
       email: form.email || household.value.email,
-      contact: { first_name: form.first_name, last_name: form.last_name, birthday_month: Number(form.birthday_month) || null, birthday_day: Number(form.birthday_day) || null },
+      contact: { first_name: form.first_name, last_name: form.last_name },
       family: info.family,
     })
   }
@@ -149,7 +133,7 @@ onMounted(async () => {
   household.value = data
   const answer = route.query.answer
   if (!data.has_address || answer === 'no') openForm()
-  else if (answer === 'yes') {
+  else if (answer === 'yes' && !missing.value.length) {
     step.value = 'check'
     confirmInfo()
   } else step.value = 'check'
@@ -177,18 +161,28 @@ onMounted(async () => {
 
         <template v-else-if="step === 'check'">
           <dl class="ap-info">
-            <div v-for="b in blocks" :key="b.label" class="ap-info__block">
+            <div v-for="b in blocks" :key="b.key" class="ap-info__block">
               <dt>{{ b.label }}</dt>
-              <dd v-for="(line, i) in b.lines" :key="i">{{ line }}</dd>
+              <dd v-if="b.missing" class="ap-info__missing">{{ t.missingNote }}</dd>
+              <dd v-for="(line, i) in b.lines" v-else :key="i">{{ line }}</dd>
             </div>
           </dl>
-          <h2 class="ap-q">{{ t.stillHeading }}</h2>
-          <p class="ap-intro">{{ t.stillBody }}</p>
-          <p v-if="error" class="form-error" role="alert">{{ error }}</p>
-          <div class="ap-choice">
-            <button class="btn btn--big" :disabled="busy" @click="confirmInfo">{{ busy ? t.saving : t.confirm }}</button>
-            <button class="btn btn--big ap-no" :disabled="busy" @click="openForm">{{ t.update }}</button>
-          </div>
+          <template v-if="missing.length">
+            <h2 class="ap-q">{{ t.missingHeading }}</h2>
+            <p class="ap-intro">{{ t.missingBody }}</p>
+            <div class="ap-choice">
+              <button class="btn btn--big" @click="openForm">{{ t.addMissing }}</button>
+            </div>
+          </template>
+          <template v-else>
+            <h2 class="ap-q">{{ t.stillHeading }}</h2>
+            <p class="ap-intro">{{ t.stillBody }}</p>
+            <p v-if="error" class="form-error" role="alert">{{ error }}</p>
+            <div class="ap-choice">
+              <button class="btn btn--big" :disabled="busy" @click="confirmInfo">{{ busy ? t.saving : t.confirm }}</button>
+              <button class="btn btn--big ap-no" :disabled="busy" @click="openForm">{{ t.update }}</button>
+            </div>
+          </template>
         </template>
 
         <form v-else-if="step === 'form'" class="ap-form" @submit.prevent="save">
@@ -201,7 +195,7 @@ onMounted(async () => {
           </fieldset>
 
           <fieldset class="ap-set">
-            <legend>{{ t.labels.address }}</legend>
+            <legend>{{ t.labels.address }} <span v-if="household && needs('address')" class="ap-need">{{ t.missingNote }}</span></legend>
             <label class="field field--wide"><span>Name on the envelope</span><input v-model="form.name" type="text" maxlength="200" placeholder="The Rivera Family" /></label>
             <label class="field field--wide"><span>Street address</span><input v-model="form.address1" type="text" maxlength="200" autocomplete="address-line1" /></label>
             <label class="field field--wide"><span>Apartment or unit (optional)</span><input v-model="form.address2" type="text" maxlength="200" autocomplete="address-line2" /></label>
@@ -213,26 +207,8 @@ onMounted(async () => {
 
           <fieldset class="ap-set">
             <legend>Phone and email</legend>
-            <label class="field"><span>{{ t.labels.phone }}</span><input v-model="form.phone" type="tel" maxlength="40" autocomplete="tel" /></label>
-            <label class="field"><span>{{ t.labels.email }}</span><input v-model="form.email" type="email" maxlength="200" autocomplete="email" /></label>
-          </fieldset>
-
-          <fieldset class="ap-set">
-            <legend>{{ t.labels.birthday }}</legend>
-            <label class="field field--half">
-              <span>Month</span>
-              <select v-model="form.birthday_month" autocomplete="bday-month">
-                <option value=""></option>
-                <option v-for="(m, i) in MONTHS" :key="m" :value="i + 1">{{ m }}</option>
-              </select>
-            </label>
-            <label class="field field--half">
-              <span>Day</span>
-              <select v-model="form.birthday_day" autocomplete="bday-day">
-                <option value=""></option>
-                <option v-for="d in days" :key="d" :value="d">{{ d }}</option>
-              </select>
-            </label>
+            <label class="field" :class="{ 'is-needed': household && needs('phone') }"><span>{{ t.labels.phone }} <em v-if="household && needs('phone')" class="ap-need">{{ t.missingNote }}</em></span><input v-model="form.phone" type="tel" maxlength="40" autocomplete="tel" /></label>
+            <label class="field" :class="{ 'is-needed': household && needs('email') }"><span>{{ t.labels.email }} <em v-if="household && needs('email')" class="ap-need">{{ t.missingNote }}</em></span><input v-model="form.email" type="email" maxlength="200" autocomplete="email" /></label>
           </fieldset>
 
           <fieldset class="ap-set">

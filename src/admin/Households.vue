@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural, addressStatus, statusLabel, setMeetLucyOpen } from './store.js'
 import { parseCsv, rowsToHouseholds, downloadCsv } from './csv.js'
-import { MONTHS, RELATIONSHIPS, birthdayText, familyLine, fullName } from '../lib/contact.js'
+import { RELATIONSHIPS, familyLine, fullName } from '../lib/contact.js'
 
 const search = ref('')
 const filter = ref('all')
@@ -56,17 +56,17 @@ function edit(h) {
 
 function addGuest() {
   const list = editing.value.guests
-  list.push({ id: null, first_name: '', last_name: '', kind: 'adult', relationship: '', birthday_month: null, birthday_day: null, is_primary: !list.length })
+  list.push({ id: null, first_name: '', last_name: '', kind: 'adult', relationship: '', is_primary: !list.length })
 }
 
 function makePrimary(i) {
   editing.value.guests.forEach((g, j) => (g.is_primary = i === j))
 }
 
-// "Dana Rivera (main contact, July 1st), Sam Rivera (Spouse)"
+// "Dana Rivera, Sam Rivera (Spouse)"
 function peopleLine(h) {
   return h.guests
-    .map((g) => (g.is_primary ? fullName(g) + (g.birthday_month ? ` (${birthdayText(g.birthday_month, g.birthday_day)})` : '') : familyLine(g)))
+    .map((g) => (g.is_primary ? fullName(g) : familyLine(g)))
     .join(', ')
 }
 
@@ -113,8 +113,6 @@ async function save() {
     kind: g.kind || 'adult',
     is_primary: i === primaryAt,
     relationship: i === primaryAt ? null : (g.relationship || '').trim() || null,
-    birthday_month: g.birthday_month && g.birthday_day ? Number(g.birthday_month) : null,
-    birthday_day: g.birthday_month && g.birthday_day ? Number(g.birthday_day) : null,
     sort: i,
   }))
   const existing = guests.filter((g) => g.id)
@@ -147,12 +145,10 @@ async function remove() {
 }
 
 function exportCsv() {
-  const header = ['name', 'greeting', 'guests', 'birthday', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'info_status', 'group', 'notes', 'personal_link']
+  const header = ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'postal_code', 'country', 'info_status', 'group', 'notes', 'personal_link']
   const body = rows.value.map((h) => {
-    const main = h.guests.find((g) => g.is_primary)
     return [
       h.name, h.greeting, h.guests.map((g) => (g.is_primary ? fullName(g) : familyLine(g))).join('; '),
-      main ? birthdayText(main.birthday_month, main.birthday_day) : '',
       h.email, h.phone, h.address1, h.address2, h.city, h.state, h.postal_code, h.country, statusLabel[addressStatus(h)], h.group_tag, h.notes, inviteLink(h),
     ]
   })
@@ -161,8 +157,8 @@ function exportCsv() {
 
 function template() {
   downloadCsv('guest-list-template.csv', [
-    ['name', 'greeting', 'guests', 'birthday', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'group', 'notes'],
-    ['The Rivera Family', 'Aunt Dana and Uncle Sam', 'Dana Rivera; Sam Rivera (Spouse); Max Rivera (Son)', 'July 1', 'dana@example.com', '(555) 010-2000', '12 Garfield Pl', 'Apt 3', 'Brooklyn', 'NY', '11215', 'United States', 'Family', ''],
+    ['name', 'greeting', 'guests', 'email', 'phone', 'address1', 'address2', 'city', 'state', 'zip', 'country', 'group', 'notes'],
+    ['The Rivera Family', 'Aunt Dana and Uncle Sam', 'Dana Rivera; Sam Rivera (Spouse); Max Rivera (Son)', 'dana@example.com', '(555) 010-2000', '12 Garfield Pl', 'Apt 3', 'Brooklyn', 'NY', '11215', 'United States', 'Family', ''],
   ])
 }
 
@@ -292,17 +288,13 @@ async function runImport() {
         </div>
 
         <h3>People in this household</h3>
-        <p class="ahint">The main contact's name and birthday go at the top of the contact email. Everyone else is listed under Family with their relationship to the main contact.</p>
+        <p class="ahint">The main contact's name goes on the contact card. Everyone else is listed under Family with their relationship to the main contact.</p>
         <div v-for="(g, i) in editing.guests" :key="i" class="aguest">
           <label class="aguest__main"><input type="radio" name="primary" :checked="g.is_primary" @change="makePrimary(i)" /> Main contact</label>
           <input v-model="g.first_name" placeholder="First name" aria-label="First name" />
           <input v-model="g.last_name" placeholder="Last name" aria-label="Last name" />
           <input v-if="!g.is_primary" v-model="g.relationship" list="relationship-options" placeholder="Relationship" aria-label="Relationship to the main contact" />
           <select v-model="g.kind" aria-label="Adult or kid"><option value="adult">Adult</option><option value="kid">Kid</option></select>
-          <span class="aguest__bday">
-            <select v-model="g.birthday_month" aria-label="Birthday month"><option :value="null">Birthday</option><option v-for="(m, k) in MONTHS" :key="m" :value="k + 1">{{ m }}</option></select>
-            <select v-model="g.birthday_day" aria-label="Birthday day"><option :value="null">Day</option><option v-for="d in 31" :key="d" :value="d">{{ d }}</option></select>
-          </span>
           <button type="button" class="abtn abtn--small abtn--quiet" @click="editing.guests.splice(i, 1)">Remove</button>
         </div>
         <datalist id="relationship-options"><option v-for="r in RELATIONSHIPS" :key="r" :value="r" /></datalist>
@@ -339,7 +331,7 @@ async function runImport() {
           <button type="button" class="abtn abtn--quiet" @click="importing.open = false">Close</button>
         </header>
         <p>Choose a CSV file, or copy rows from Google Sheets or Excel and paste them below. The first row must be column names. Only <code>name</code> is required.</p>
-        <p>Recognized columns: name, greeting, guests (separated by semicolons, with the relationship in parentheses, main contact first), birthday (the main contact's, like July 1 or 7/1), email, phone, address1, address2, city, state, zip, country, group, notes.</p>
+        <p>Recognized columns: name, greeting, guests (separated by semicolons, with the relationship in parentheses, main contact first), email, phone, address1, address2, city, state, zip, country, group, notes.</p>
         <div class="atools">
           <input type="file" accept=".csv,text/csv,text/plain" @change="onFile" />
           <button type="button" class="abtn abtn--small" @click="template">Download a template</button>

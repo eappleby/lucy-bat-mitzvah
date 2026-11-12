@@ -4,7 +4,7 @@ The website for Lucy Appleby's bat mitzvah on March 20, 2027 in Park Slope, Broo
 
 Right now the site does three jobs:
 
-1. **Checks everyone's contact info.** Each household gets a personal email, "Contact info up to date?", that lists what we have for them (address, phone, email, the main contact's birthday, and family with relationships) with Confirm info and Update info buttons. When we have no address, it asks for their contact info instead.
+1. **Checks everyone's contact info.** Each household gets a personal email, "Contact info up to date?", that shows what we have for them (address, phone, email, and family with relationships). When everything is there it offers Confirm info and Update info. Anything missing is marked "We still need this" and the button becomes Add missing info, so people fill it in rather than confirm an incomplete card. When we have no address, it asks for their contact info instead.
 2. **Meet Lucy** (`/`), a fun page linked from the save the date card: a hello from Lucy, photos of her over the years, her friends, an 8-bit video game of her growing up that you walk through with the arrows, a message in a bottle, and "Invitation to follow. Stay tuned!" It stays behind a "Coming soon" page with a small game (Pearl dive) until it is switched on in the admin.
 3. **An admin** for the guest list, the contact emails, and the Meet Lucy switch.
 
@@ -55,7 +55,7 @@ src/
   components/journey/       The 8-bit video game ("How I got here")
   lib/supabase.js           Supabase client
   lib/state.js              Pearl hunt and lightbox
-  lib/contact.js            Birthday, address, and family formatting shared by the page, email, and admin
+  lib/contact.js            The contact card (address, family, what is missing), shared by the page, email, and admin
   admin/                    The admin, loaded only at /admin
   admin/emailTemplate.js    The contact email
   styles/                   base.css (shared), dive.css, address.css, admin.css
@@ -82,14 +82,14 @@ reference/                  Original photos and the card (not committed)
 
 The email buttons go to `/i/<token>?answer=yes` and `/i/<token>?answer=no`, so one tap from the email confirms the info or opens the form.
 
-Each household has one main contact (the first person, unless you pick another in the guest list). Their name and birthday fill the top of the email; everyone else is listed under Family with their relationship to the main contact. Birthdays are month and day only.
+Each household has one main contact (the first person, unless you pick another in the guest list). Everyone else is listed under Family with their relationship to the main contact.
 
 ## Security model
 
 - Every table has row level security turned on.
 - Visitors cannot read or write any table. The one exception is published rows of `lucy_posts`.
 - Visitors act only through database functions: `get_invite`, `confirm_info`, `submit_contact`, `send_bottle`, `get_public_bottles`, `get_site_status`.
-- `get_invite` returns a household's contact card (envelope name, address, phone, email, the main contact's name and birthday, and family names with relationships) to whoever holds that household's personal link, so they can check it. Notes, groups, and other households are never returned, and nothing is returned without a valid token.
+- `get_invite` returns a household's contact card (envelope name, address, phone, email, the main contact's name, and family names with relationships) to whoever holds that household's personal link, so they can check it. Notes, groups, and other households are never returned, and nothing is returned without a valid token.
 - `submit_contact` with a personal token updates that household right away, including adding and removing family members. Every send is also kept in `address_submissions` as a record.
 - The Coming soon switch is checked in the browser. Meet Lucy's code is only downloaded when it is shown, but its photos in `public/photos/` can still be opened by exact address.
 - Admins are Supabase Auth users whose email is in the `admins` table.
@@ -112,7 +112,7 @@ Repeat steps 1 and 2 for each person who should have access.
 
 ### 2. Database changes
 
-Every file in `supabase/migrations/` is already applied to the hosted project, through `20261112010000_site_settings.sql`. To change it:
+Every file in `supabase/migrations/` is already applied to the hosted project, through `20261112020000_contact_without_birthday.sql`. To change it:
 
 ```sh
 npm run db:link          # one time, asks for the database password

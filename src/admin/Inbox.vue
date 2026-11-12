@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
 import { store, toast, failed, loadHouseholds, loadSubmissions, formatWhen } from './store.js'
-import { birthdayText, familyLine, fullName } from '../lib/contact.js'
+import { familyLine, fullName } from '../lib/contact.js'
 
 const showAll = ref(false)
 const pick = reactive({}) // submission id -> chosen household id
@@ -44,7 +44,7 @@ function newPeople(s, householdId, existing = []) {
   if (s.first_name && !senderListed) {
     people.push({
       household_id: householdId, first_name: s.first_name, last_name: s.last_name, is_primary: !hasPrimary,
-      birthday_month: s.birthday_month, birthday_day: s.birthday_day, kind: 'adult', sort: sort++,
+      kind: 'adult', sort: sort++,
     })
   }
   for (const f of s.family || []) {
@@ -84,11 +84,6 @@ async function mergeInto(s, householdId) {
   if (s.phone && !target.phone) fields.phone = s.phone
   const { error } = await supabase.from('households').update(fields).eq('id', householdId)
   if (failed(error, 'save the info')) return
-  // The sender's birthday goes on their own row when they are already listed.
-  const me = target.guests.find((g) => sameName(g.first_name, s.first_name))
-  if (me && s.birthday_month) {
-    await supabase.from('guests').update({ birthday_month: s.birthday_month, birthday_day: s.birthday_day }).eq('id', me.id)
-  }
   const people = newPeople(s, householdId, target.guests)
   if (people.length) failed((await supabase.from('guests').insert(people)).error, 'add the people')
   await finish(s, householdId, 'merged', `Info saved for ${target.name}`)
@@ -131,7 +126,6 @@ const restore = (s) => finish(s, null, 'new', 'Moved back to the inbox')
           <template v-if="s.country && s.country !== 'United States'"><br />{{ s.country }}</template>
         </p>
         <p v-if="s.email || s.phone" class="acard__meta">{{ [s.email, s.phone].filter(Boolean).join(' | ') }}</p>
-        <p v-if="s.birthday_month" class="acard__meta">Birthday: {{ birthdayText(s.birthday_month, s.birthday_day) }}</p>
         <p v-if="s.family?.length" class="acard__meta">Family: {{ s.family.map(familyLine).join(', ') }}</p>
         <blockquote v-if="s.note">{{ s.note }}</blockquote>
         <p class="acard__meta">Sent {{ formatWhen(s.created_at) }}</p>

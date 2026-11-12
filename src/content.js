@@ -20,22 +20,28 @@ export const copy = {
   // The contact info page (/i/<token> and /address) and its email.
   contact: {
     checkHeading: 'Contact info up to date?',
-    checkIntro: "It's bat mitzvah season! Could you take a quick look below and let Lucy know if your info is still correct.",
+    checkIntro: "Lucy Appleby's bat mitzvah is happening soon. Could you take a quick look below and let Lucy know if your info is still correct?",
     newHeading: "What's your contact info?",
-    newIntro: "It's bat mitzvah season! Could you fill this in so Lucy knows where to reach you?",
+    newIntro: "Lucy Appleby's bat mitzvah is happening soon. Could you let Lucy know your contact info so we can send you all the details?",
     stillHeading: 'Still correct?',
     stillBody: 'If everything still looks good, confirm below. If anything is outdated or incorrect, just click to update.',
+    missingHeading: 'A few things are missing',
+    missingBody: 'Could you add what we still need? It only takes a minute.',
+    missingNote: 'We still need this',
     confirm: 'Confirm info',
     update: 'Update info',
+    addMissing: 'Add missing info',
+    addMine: 'Add my info',
     save: 'Save my info',
     saving: 'Saving',
     thanksHeading: 'Thanks {name}!',
     thanksBody: 'You just might be getting a card in the mail from Lucy.',
     unknownLink: "We don't recognize this link, but you can still send Lucy your info here.",
-    labels: { address: 'Address', phone: 'Phone', email: 'Email', birthday: 'Birthday', family: 'Family' },
+    labels: { address: 'Address', phone: 'Phone', email: 'Email', family: 'Family' },
     subjectCheck: 'Lucy wants to know if your contact info is still up to date?',
     subjectNew: 'Lucy wants to know your contact info',
   },
+
   shallows: {
     heading: "Hi, I'm Lucy!",
     body: [
