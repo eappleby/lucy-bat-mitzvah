@@ -125,23 +125,28 @@ The first `db:push` re-runs the existing migrations. They are written to be safe
 
 ### 3. Deploy to Cloudflare Pages
 
-Either connect the GitHub repo in the Cloudflare dashboard (**Workers & Pages > Create > Pages > Connect to Git**) with:
+Connect the GitHub repo once, and every push to `main` deploys on its own.
 
-- Build command: `npm run build`
-- Build output directory: `dist`
+1. In the Cloudflare dashboard open **Workers & Pages > Create > Pages > Connect to Git** and pick `eappleby/lucy-bat-mitzvah`.
+2. Production branch `main`, framework preset **None**, build command `npm run build`, build output directory `dist`, root directory blank. `.node-version` tells the build to use Node 22, which Vite needs.
+3. **Save and Deploy.** The site comes up at `https://lucy-bat-mitzvah.pages.dev` (or a similar name if that one is taken).
 
-or deploy from this machine with `npm run deploy`.
+`wrangler.toml` is the source of truth for the project's settings, so the dashboard shows some fields as read only. That is expected.
+
+To deploy from this machine instead: `npx wrangler login` once, then `npm run deploy`.
 
 ### 4. Connect Postmark
 
-In the Pages project open **Settings > Variables and Secrets** and add:
+In the Pages project open **Settings > Variables and Secrets** and add these for **Production**, each as type **Secret**:
 
-| Name | Type | Value |
-| --- | --- | --- |
-| `POSTMARK_SERVER_TOKEN` | Secret | The Server API token from Postmark |
-| `POSTMARK_FROM` | Text | A verified sender, for example `Lucy's Bat Mitzvah <hello@yourdomain.com>` |
-| `POSTMARK_REPLY_TO` | Text | Optional |
-| `POSTMARK_MESSAGE_STREAM` | Text | Optional, defaults to `outbound` |
+| Name | Value |
+| --- | --- |
+| `POSTMARK_SERVER_TOKEN` | The Server API token from Postmark |
+| `POSTMARK_FROM` | A sender Postmark has verified, for example `Lucy's Bat Mitzvah <hello@yourdomain.com>` |
+| `POSTMARK_REPLY_TO` | Optional |
+| `POSTMARK_MESSAGE_STREAM` | Optional, defaults to `outbound` |
+
+If the dashboard will not let you add them, use `npx wrangler pages secret put POSTMARK_SERVER_TOKEN` (and so on) from this folder.
 
 Redeploy after adding them. To test locally, copy `.dev.vars.example` to `.dev.vars`, fill it in, and run `npm run preview:cf`.
 
