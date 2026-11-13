@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { SITE_URL } from '../../shared/public-config.js'
 import { store, toast, failed, loadHouseholds, addressStatus, statusLabel, formatWhen, plural } from './store.js'
 import { buildContactEmail, hasInfo } from './emailTemplate.js'
 import { copy } from '../content.js'
@@ -20,8 +21,7 @@ const subjects = reactive({ check: copy.contact.subjectCheck, fresh: copy.contac
 const subjectFor = (h) => (hasInfo(h) ? subjects.check : subjects.fresh)
 const build = (household) => buildContactEmail({ household, origin, subject: subjectFor(household) })
 
-const origin = window.location.origin
-const isLocal = /localhost|127\.0\.0\.1/.test(origin)
+const origin = SITE_URL
 
 const candidates = computed(() =>
   store.households.filter((h) => {
@@ -135,7 +135,6 @@ async function sendAll() {
     </div>
     <p v-else-if="statusError" class="anote anote--warn">{{ statusError }}</p>
     <p v-if="status?.testMode" class="anote anote--warn">CloudMailin test mode is on. Messages are checked but not delivered.</p>
-    <p v-if="isLocal" class="anote anote--warn">Links and pictures in these emails point to {{ origin }}. Send from the deployed site so they work for guests.</p>
 
     <div class="aemail">
       <div class="aemail__side">

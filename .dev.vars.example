@@ -1,6 +1,6 @@
 # Copy to .dev.vars for local testing with `npm run preview:cf`. Never commit .dev.vars.
 # In production, set the same names in Cloudflare Pages > Settings > Variables and Secrets.
 CLOUDMAILIN_SMTP_URL="smtp://USERNAME:PASSWORD@smtp.cloudmta.net:587?starttls=true"
-EMAIL_FROM="Lucy's Bat Mitzvah <lucy@lucybatmitzvah.com>"
-EMAIL_REPLY_TO=
+EMAIL_FROM="Lucy <itsmelucy@lucybatmitzvah.com>"
+EMAIL_REPLY_TO="Evan <lucysdad@lucybatmitzvah.com>"
 CLOUDMAILIN_TEST_MODE=

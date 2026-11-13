@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { SITE_URL } from '../../shared/public-config.js'
 
 // One shared copy of the guest list for every admin tab.
 export const store = reactive({
@@ -91,7 +92,7 @@ export function addressLine(h) {
 
 export const guestNames = (h) => h.guests.map((g) => [g.first_name, g.last_name].filter(Boolean).join(' ')).join(', ')
 
-export const inviteLink = (h) => `${window.location.origin}/i/${h.invite_token}`
+export const inviteLink = (h) => `${SITE_URL}/i/${h.invite_token}`
 
 export async function copyText(text, label = 'Copied') {
   try {

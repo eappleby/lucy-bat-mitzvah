@@ -1,6 +1,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { supabase } from '../lib/supabase.js'
+import { SITE_URL } from '../../shared/public-config.js'
 import { store, toast, failed, loadHouseholds, hasAddress, addressLine, guestNames, inviteLink, copyText, plural, addressStatus, statusLabel, setMeetLucyOpen } from './store.js'
 import { parseCsv, rowsToHouseholds, downloadCsv } from './csv.js'
 import { RELATIONSHIPS, familyLine, fullName } from '../lib/contact.js'
@@ -37,8 +38,8 @@ const rows = computed(() => {
   })
 })
 
-const sharedForm = window.location.origin + '/address'
-const meetLucy = window.location.origin + '/'
+const sharedForm = SITE_URL + '/address'
+const meetLucy = SITE_URL + '/'
 
 function blank() {
   return {

@@ -43,7 +43,7 @@ Open http://localhost:5173. The admin is at http://localhost:5173/admin.
 
 ```
 index.html
-shared/public-config.js     Supabase URL and publishable key (public values only)
+shared/public-config.js     Site address, Supabase URL and publishable key (public values only)
 src/
   content.js                Every word and photo choice on the public pages
   Home.vue                  The page at /: Meet Lucy when switched on, Coming soon when off
@@ -93,7 +93,8 @@ Each household has one main contact (the first person, unless you pick another i
 - `submit_contact` with a personal token updates that household right away, including adding and removing family members. Every send is also kept in `address_submissions` as a record.
 - The Coming soon switch is checked in the browser. Meet Lucy's code is only downloaded when it is shown, but its photos in `public/photos/` can still be opened by exact address.
 - Admins are Supabase Auth users whose email is in the `admins` table.
-- The site asks search engines not to index it (`robots.txt`, a meta tag, and an `X-Robots-Tag` header). Anyone with the link can still open it.
+- The site asks search engines and AI crawlers not to index, archive, or train on it: `robots.txt` blocks every crawler and names the AI ones, `index.html` has robots, googlebot, and bingbot meta tags, and `public/_headers` sends the same rules as an `X-Robots-Tag` header on every response, pictures included. These are requests that well behaved bots follow. Cloudflare's bot settings (see Deploy) block the rest. Anyone with the link can still open it.
+- The canonical address is `https://www.lucybatmitzvah.com` (the `canonical` link in `index.html` and `SITE_URL`). The bare domain redirects to it.
 
 ## First time setup
 
@@ -130,6 +131,11 @@ Connect the GitHub repo once, and every push to `main` deploys on its own.
 1. In the Cloudflare dashboard open **Workers & Pages > Create > Pages > Connect to Git** and pick `eappleby/lucy-bat-mitzvah`.
 2. Production branch `main`, framework preset **None**, build command `npm run build`, build output directory `dist`, root directory blank. `.node-version` tells the build to use Node 22, which Vite needs.
 3. **Save and Deploy.** The site comes up at `https://lucy-bat-mitzvah.pages.dev` (or a similar name if that one is taken).
+4. In the Pages project open **Custom domains** and add `www.lucybatmitzvah.com` and `lucybatmitzvah.com`.
+5. In the `lucybatmitzvah.com` zone open **Rules > Redirect Rules**, create a rule from the **Redirect from root to WWW** template, and deploy it.
+6. In the zone open **Security > Bots** and turn on **Block AI bots** (all pages) and **Bot Fight Mode**.
+
+The site's address is `SITE_URL` in `shared/public-config.js` (`https://www.lucybatmitzvah.com`). Personal links, the shared `/address` link, and the pictures in emails always use it, so they are right even when the admin is opened on localhost or `pages.dev`. Change it there if the domain ever changes.
 
 `wrangler.toml` is the source of truth for the project's settings, so the dashboard shows some fields as read only. That is expected.
 
@@ -142,8 +148,8 @@ In the Pages project open **Settings > Variables and Secrets** and add these for
 | Name | Type | Value |
 | --- | --- | --- |
 | `CLOUDMAILIN_SMTP_URL` | Secret | The SMTP URL from CloudMailin, `smtp://USERNAME:PASSWORD@smtp.cloudmta.net:587?starttls=true` |
-| `EMAIL_FROM` | Text | An address on the verified sending domain, for example `Lucy's Bat Mitzvah <lucy@lucybatmitzvah.com>` |
-| `EMAIL_REPLY_TO` | Text | Optional |
+| `EMAIL_FROM` | Text | `Lucy <itsmelucy@lucybatmitzvah.com>` |
+| `EMAIL_REPLY_TO` | Text | `Evan <lucysdad@lucybatmitzvah.com>` (optional) |
 | `CLOUDMAILIN_TEST_MODE` | Text | Optional. `true` makes CloudMailin check each message without delivering it. |
 
 Instead of the URL you can add `CLOUDMAILIN_SMTP_USERNAME` and `CLOUDMAILIN_SMTP_PASSWORD` as two secrets. The function sends through CloudMailin's HTTP API, which takes the same username and password.
@@ -160,7 +166,7 @@ The `email_log.postmark_id` column holds CloudMailin's message id. The name is l
 
 - **Pearl dive top 10:** scores live in the `pearl_scores` table. A score that makes the top 10 asks for up to 3 letters or digits. To remove one, delete its row in Supabase (**Table Editor > pearl_scores**).
 - **Open Meet Lucy to everyone:** Admin > Guest list > Open it to everyone. Switch to Coming soon puts it back.
-- **Send the contact emails:** Admin > Email. Pick who gets it (not emailed yet, not confirmed yet, or everyone), click a row to preview that household's email, send yourself a test, then send. There is one subject for households we have info for and another for those we don't. The email images load from the live site, so send from the deployed admin, not localhost.
+- **Send the contact emails:** Admin > Email. Pick who gets it (not emailed yet, not confirmed yet, or everyone), click a row to preview that household's email, send yourself a test, then send. There is one subject for households we have info for and another for those we don't. Links and pictures in the email always point to `SITE_URL`, so a test from localhost shows what guests will get once the site is deployed.
 - **Watch the answers:** Admin > Guest list shows each household as Confirmed, Not confirmed, or Needs address. Info from the shared `/address` link arrives in Admin > Inbox; saving it to a household fills in the address and adds any family members it does not have yet.
 - **Mailing labels:** Admin > Guest list > Export for mailing labels.
 - **Change words:** edit `src/content.js`.

@@ -7,7 +7,7 @@
 //   or both of these instead of the URL:
 //   CLOUDMAILIN_SMTP_USERNAME   secret
 //   CLOUDMAILIN_SMTP_PASSWORD   secret
-//   EMAIL_FROM                  required, e.g.  Lucy's Bat Mitzvah <lucy@lucybatmitzvah.com>
+//   EMAIL_FROM                  required, e.g.  Lucy <itsmelucy@lucybatmitzvah.com>
 //   EMAIL_REPLY_TO              optional
 //   CLOUDMAILIN_TEST_MODE       optional, "true" checks each message without sending it
 //
