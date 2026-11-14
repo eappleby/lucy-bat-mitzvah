@@ -22,6 +22,7 @@ export const C = {
   lav: '#8f83d9',
   sun: '#fa8f0d',
   yellow: '#ffd23f',
+  gold: '#f2b51c',
   pearl: '#f7ecd9',
   sand: '#f4dfb8',
   brick: '#c8634a',

@@ -169,10 +169,10 @@ N(13690, 13800, S.pine(13740, 400))
 N(13800, 13940, S.flagPole(13820, C.cyan))
 N(13950, 14270, S.cabin(13960, 280))
 N(14000, 14240, S.pine(14200, 380))
-N(14560, 14700, S.flagPole(14600, C.yellow))
+N(14560, 14700, S.flagPole(14600, C.gold))
 N(13990, 14130, line(14050, G, 14050, G - 270, { stroke: '#6b4a32', sw: 6 }) + rect(13940, G - 330, 220, 70, { fill: C.yellow, gap: 6, sw: 3 }))
 label(14050, G - 295, 'Color war!', 34, C.ink)
-N(13820, 14620, line(13820, G - 400, 14600, G - 400, { stroke: C.ink, sw: 2 }) + S.pennants(13840, G - 400, 740, [C.cyan, C.yellow]))
+N(13820, 14620, line(13820, G - 400, 14600, G - 400, { stroke: C.ink, sw: 2 }) + S.pennants(13840, G - 400, 740, [C.cyan, C.gold]))
 
 // ---------- MS 51 and the dance ----------
 N(14700, 15400, S.ground(14700, 15400, 'sidewalk'))

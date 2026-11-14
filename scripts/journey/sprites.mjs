@@ -329,7 +329,7 @@ export const CAST = {
   princess: { ...lucy, h: 25, build: 'young', hairStyle: 'curlyBob', top: '#e79bd0', skirtColor: '#e79bd0', skirtLen: 1, flare: 1.2, sparkle: '#ffffff', sleeve: 0.25, crown: true, wand: true, bottom: 'none', shoes: '#c35cc0' },
   kid: { ...lucy, h: 32, hairStyle: 'long', top: '#fc564b', bottom: 'shorts', bottomColor: '#5a7fc0', shoes: '#ffffff', socks: '#f0517e' },
   traveler: { ...lucy, h: 33, hairStyle: 'long', top: '#4bb5b2', bottom: 'pants', bottomColor: '#4c6fae', shoes: '#fc564b', backpack: '#fa8f0d' },
-  camper: { ...lucy, h: 35, hairStyle: 'ponytail', tie: '#ffd23f', top: '#1f9fe0', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffffff', socks: '#1f9fe0', facepaint: '#1f9fe0' },
+  camper: { ...lucy, h: 35, hairStyle: 'ponytail', tie: '#fc564b', top: '#f2b51c', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffffff', socks: '#f2b51c', facepaint: '#f2b51c' },
   teen: { ...lucy, h: 37, hairStyle: 'ponytail', tie: '#f0517e', top: '#9cc6ea', under: '#ffffff', bottom: 'wide', bottomColor: '#8f83d9', shoes: '#ffffff', chunky: true, bag: '#fc564b', sleeve: 0.9 },
   bat: { ...lucy, h: 37, hairStyle: 'longWavy', top: '#2b4b9b', skirtColor: '#2b4b9b', skirtLen: 0.75, flare: 0.9, sparkle: '#cfe0ff', sleeve: 0.3, bottom: 'none', shoes: '#c9a24a', tallit: true },
 
@@ -338,9 +338,9 @@ export const CAST = {
   sister: { h: 26, build: 'young', skin: SKIN.lucy, hair: HAIR.dark, hairStyle: 'pigtails', top: '#f0517e', bottom: 'shorts', bottomColor: '#4bb5b2', shoes: '#ffd23f' },
   mom: { h: 42, build: 'adult', skin: SKIN.lucy, hair: HAIR.dark, hairStyle: 'longWavy', top: '#f0e3cf', bottom: 'pants', bottomColor: '#3b4c7a', shoes: '#9b6a42', bag: '#0a8067' },
   dad: { h: 44, build: 'adult', skin: SKIN.light, hair: HAIR.brown, hairStyle: 'short', top: '#5a8fd0', bottom: 'pants', bottomColor: '#6b6f7a', shoes: '#3a2a20', glasses: true },
-  camperA: { h: 34, skin: SKIN.tan, hair: HAIR.brown, hairStyle: 'pigtails', top: '#1f9fe0', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffffff', facepaint: '#1f9fe0' },
-  camperB: { h: 33, skin: SKIN.light, hair: HAIR.red, hairStyle: 'bun', top: '#1f9fe0', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#f0517e', facepaint: '#1f9fe0' },
-  camperC: { h: 34, skin: SKIN.deep, hair: HAIR.black, hairStyle: 'curly', top: '#1f9fe0', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffd23f', facepaint: '#1f9fe0' },
+  camperA: { h: 34, skin: SKIN.tan, hair: HAIR.brown, hairStyle: 'pigtails', top: '#f2b51c', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffffff', facepaint: '#f2b51c' },
+  camperB: { h: 33, skin: SKIN.light, hair: HAIR.red, hairStyle: 'bun', top: '#f2b51c', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#f0517e', facepaint: '#f2b51c' },
+  camperC: { h: 34, skin: SKIN.deep, hair: HAIR.black, hairStyle: 'curly', top: '#f2b51c', logo: '#ffffff', bottom: 'shorts', bottomColor: '#2b3f73', shoes: '#ffd23f', facepaint: '#f2b51c' },
   teenA: { h: 36, skin: SKIN.light, hair: HAIR.blonde, hairStyle: 'long', top: '#f0517e', bottom: 'wide', bottomColor: '#3d4f86', shoes: '#ffffff', chunky: true },
   teenB: { h: 35, skin: SKIN.brown, hair: HAIR.black, hairStyle: 'bun', top: '#fa8f0d', bottom: 'wide', bottomColor: '#ffffff', shoes: '#2b2f3a', chunky: true },
 }
