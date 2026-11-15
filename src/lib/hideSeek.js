@@ -4,8 +4,9 @@ import { reducedMotion } from './state.js'
 // Hide and seek on Meet Lucy. Lucy (the 8-bit Lucy from "How I got here") hides behind
 // drawings down the page (components/LucyPeek.vue). Nothing on the page explains it.
 // She peeks out only from a spot that has been on screen for a few seconds while the
-// page is still, once per visit to that spot, and never two at a time. Found spots are
-// remembered on this device only.
+// page is still, once per visit to that spot, and never two at a time. Once she has shown
+// herself at a spot (or it was found before), holding the mouse over it brings her back
+// out until the mouse leaves. Found spots are remembered on this device only.
 
 // Every hiding spot on the page. Each one needs a <LucyPeek> with the same id.
 export const SPOTS = ['hero', 'portrait', 'reef-left', 'reef-right', 'bottle', 'clam', 'floor']
@@ -26,7 +27,9 @@ function readFound() {
 
 export const found = ref(readFound())
 export const allFound = computed(() => found.value.length >= SPOTS.length)
-export const peek = reactive({ id: null, caught: false })
+export const peek = reactive({ id: null, caught: false, hover: false })
+// Spots she has shown herself at, so hovering there brings her back out.
+export const revealed = reactive(new Set(found.value))
 
 watch(
   found,
@@ -87,15 +90,35 @@ function tick() {
   if (!ready.length) return
   const [id, s] = ready[Math.floor(Math.random() * ready.length)]
   s.done = true
+  revealed.add(id)
   peek.id = id
   peek.caught = false
+  peek.hover = false
   hideTimer = setTimeout(duck, SHOW_MS)
 }
 
 function duck() {
   peek.id = null
   peek.caught = false
+  peek.hover = false
   restUntil = Date.now() + REST_MS
+}
+
+// The mouse is over a spot she has already shown herself at: come out and stay out.
+export function hoverIn(id) {
+  if (!revealed.has(id) || (peek.id && peek.id !== id)) return
+  clearTimeout(hideTimer)
+  peek.id = id
+  peek.hover = true
+}
+
+export function hoverOut(id) {
+  if (peek.id !== id) return
+  peek.hover = false
+  if (!peek.caught) {
+    clearTimeout(hideTimer)
+    hideTimer = setTimeout(duck, 250)
+  }
 }
 
 export function catchLucy(id) {
@@ -103,7 +126,8 @@ export function catchLucy(id) {
   peek.caught = true
   if (!found.value.includes(id)) found.value.push(id)
   clearTimeout(hideTimer)
-  hideTimer = setTimeout(duck, 700)
+  // A quick wave, then she ducks, or stays out if the mouse is still on her.
+  hideTimer = setTimeout(() => (peek.hover ? (peek.caught = false) : duck()), 700)
 }
 
 // For tuning spots in `npm run dev`: __hideSeek.show('clam') holds her out at one spot,
@@ -112,6 +136,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
   window.__hideSeek = {
     show(id) {
       clearTimeout(hideTimer)
+      revealed.add(id)
       peek.id = id
       peek.caught = false
       return SPOTS

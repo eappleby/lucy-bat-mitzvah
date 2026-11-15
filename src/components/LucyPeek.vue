@@ -5,7 +5,7 @@
 // See lib/hideSeek.js for when she peeks.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { copy } from '../content.js'
-import { catchLucy, peek, register, setVisible, unregister } from '../lib/hideSeek.js'
+import { catchLucy, hoverIn, hoverOut, peek, register, revealed, setVisible, unregister } from '../lib/hideSeek.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -51,6 +51,27 @@ function onPageClick(e) {
   catchLucy(props.id)
 }
 
+// Once she has shown herself here, a mouse over the spot (where she leans out, plus a
+// margin) brings her back out until it leaves. Touch screens have no hover, so this is
+// mouse only.
+const HOVER_MARGIN = 18
+let hovering = false
+function onPointerMove(e) {
+  if (e.pointerType !== 'mouse' || !revealed.has(props.id)) return
+  const r = el.value?.getBoundingClientRect()
+  if (!r) return
+  const inside =
+    e.clientX > r.left - HOVER_MARGIN && e.clientX < r.right + HOVER_MARGIN &&
+    e.clientY > r.top - HOVER_MARGIN && e.clientY < r.bottom + HOVER_MARGIN
+  if (inside && !hovering) {
+    hovering = true
+    hoverIn(props.id)
+  } else if (!inside && hovering) {
+    hovering = false
+    hoverOut(props.id)
+  }
+}
+
 watch(phase, (p) => {
   if (p === 'out') place()
   if (p === 'out') document.addEventListener('click', onPageClick, true)
@@ -62,16 +83,23 @@ onMounted(() => {
   place()
   const art = el.value?.nextElementSibling
   if (art && 'IntersectionObserver' in window) {
-    observer = new IntersectionObserver(([e]) => setVisible(props.id, e.isIntersecting), { threshold: 0.6 })
+    observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) place()
+      setVisible(props.id, e.isIntersecting)
+    }, { threshold: 0.6 })
     observer.observe(art)
   }
   window.addEventListener('resize', place)
+  document.addEventListener('pointermove', onPointerMove, { passive: true })
+  // The drawing may not have loaded yet, so place her again once it has.
+  el.value?.nextElementSibling?.addEventListener?.('load', place)
 })
 onUnmounted(() => {
   observer?.disconnect()
   unregister(props.id)
   window.removeEventListener('resize', place)
   document.removeEventListener('click', onPageClick, true)
+  document.removeEventListener('pointermove', onPointerMove)
 })
 </script>
 
