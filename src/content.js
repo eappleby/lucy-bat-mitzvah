@@ -47,7 +47,7 @@ export const copy = {
     body: ["I'm becoming a bat mitzvah on March 20, 2027, and I want you there."],
     timelineHeading: 'Me, over the years',
   },
-  reef: { heading: 'Some of my friends and family' },
+  reef: { heading: 'Friends and family' },
   journey: {
     heading: 'How I got here',
     hint: 'Hold right arrow to walk',
@@ -85,7 +85,7 @@ export const timeline = [
   { id: 'pink-jacket', caption: 'Me', pos: '50% 30%' },
 ]
 
-// "Some of my friends and family" (the Reef section).
+// "Friends and family" (the Reef section).
 export const friends = [
   { id: 'couch-four', caption: 'Hazel and the cousins', pos: '50% 40%' },
   { id: 'art-class', caption: 'Me and Naomi @ my 6th bday', pos: '62% 30%' },

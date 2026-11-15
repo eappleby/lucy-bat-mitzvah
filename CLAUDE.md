@@ -53,7 +53,7 @@ Done: contact info check (personal email with the full contact card and Confirm 
 
 Hidden for now: Lucy's sketchbook section (component kept, admin still works).
 
-Guesses to confirm with the family: which photos go in "Some of my friends and family" (`friends`). The `timeline` order and captions came from the family.
+Guesses to confirm with the family: which photos go in "Friends and family" (`friends`). All captions came from the family.
 
 Not built yet: RSVP pages on `/i/<token>` (tables `events`, `household_events`, `rsvps` and `households.personal_message` are ready), hotels and schedule pages, save the date and invitation emails.
 

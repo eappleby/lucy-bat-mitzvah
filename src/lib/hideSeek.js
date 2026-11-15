@@ -10,7 +10,9 @@ import { reducedMotion } from './state.js'
 // Found spots are remembered on this device only.
 
 // Every hiding spot on the page. Each one needs a <LucyPeek> with the same id.
-export const SPOTS = ['hero', 'portrait', 'reef-left', 'reef-right', 'bottle', 'clam', 'floor']
+export const SPOTS = [
+  'hero', 'hero-coral', 'portrait', 'polaroid', 'reef-left', 'reef-right', 'bottle', 'bottle-shell', 'clam', 'floor',
+]
 const KEY = 'lucy-hide-seek'
 
 const SHOW_MS = reducedMotion ? 2600 : 1700 // how long she stays out

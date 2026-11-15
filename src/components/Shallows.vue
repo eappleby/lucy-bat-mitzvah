@@ -23,6 +23,7 @@ import LucyPeek from './LucyPeek.vue'
       <h3 class="years__title">{{ copy.shallows.timelineHeading }}</h3>
       <ol class="years__strip">
         <li v-for="(p, i) in timeline" :key="p.id" class="years__item" :style="{ '--tilt': [-4, 3, -2, 4, -3, 2, -1][i % 7] + 'deg' }">
+          <LucyPeek v-if="i === 1" id="polaroid" dir="right" :x="0.96" :y="0.7" />
           <button class="snap" :aria-label="'Open photo: ' + p.caption" @click="openLightbox(timeline, i)">
             <img :src="photoThumb(p.id)" :style="{ objectPosition: p.pos }" :alt="p.caption" loading="lazy" />
             <span>{{ p.caption }}</span>

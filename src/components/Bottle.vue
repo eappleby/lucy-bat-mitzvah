@@ -76,6 +76,7 @@ function again() {
       </div>
     </div>
     <img class="swim swim--right bottle-bay__fish" src="/art/fish-red.webp" alt="" loading="lazy" />
+    <LucyPeek id="bottle-shell" dir="right" :x="0.78" :y="0.5" />
     <img class="bottle-bay__shell" src="/art/shell-pearls.webp" alt="" loading="lazy" />
 
     <div v-if="reading" class="modal" role="dialog" aria-modal="true" aria-label="Message in a bottle" @click.self="reading = null">

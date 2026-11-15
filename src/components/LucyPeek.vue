@@ -130,6 +130,7 @@ onUnmounted(() => {
   <div
     ref="el"
     class="peek"
+    :data-spot="id"
     :class="['peek--' + dir, 'is-' + phase]"
     :style="{ left: pos.left + 'px', top: pos.top + 'px', width: W + 'px', height: H + 'px' }"
   >

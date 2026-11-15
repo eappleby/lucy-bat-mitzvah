@@ -290,12 +290,10 @@
    box that clips her, placed right before its drawing so the drawing paints over her. */
 .peek {
   position: absolute;
-  z-index: 1;
   overflow: hidden;
   pointer-events: none;
 }
 .zone__inner > .peek { z-index: -1; } /* under the portrait, the note, and the clam */
-.floor__sand > .peek { z-index: auto; }
 .peek__lucy {
   position: absolute;
   inset: 0;
