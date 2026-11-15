@@ -88,22 +88,22 @@ export const timeline = [
 // "Some of my friends and family" (the Reef section).
 export const friends = [
   { id: 'couch-four', caption: 'Hazel and the cousins', pos: '50% 40%' },
-  { id: 'art-class', caption: 'Clay day', pos: '62% 30%' },
-  { id: 'sidewalk-chalk', caption: 'Chalk on Halloween', pos: '45% 45%' },
+  { id: 'art-class', caption: 'Me and Naomi @ my 6th bday', pos: '62% 30%' },
+  { id: 'sidewalk-chalk', caption: 'Park Slope block party', pos: '45% 45%' },
   { id: 'kimonos', caption: 'PS 107 Heritage day', pos: '50% 40%' },
-  { id: 'ice-cream-bench', caption: 'Ice cream and a pup', pos: '40% 45%' },
+  { id: 'ice-cream-bench', caption: 'Ice cream with Maui, Amelia, and Bea', pos: '40% 45%' },
   { id: 'jersey-day', caption: 'My first Pembroke friends', pos: '50% 25%' },
-  { id: 'class-project', caption: 'We crushed it', pos: '50% 30%' },
+  { id: 'class-project', caption: 'Nailed it!', pos: '50% 30%' },
   { id: 'big-jump', caption: 'PS 107 Spring Fling', pos: '50% 50%' },
   { id: 'skate-crew', caption: 'Skating at Le Frak', pos: '50% 30%' },
-  { id: 'rink-hug', caption: 'Skate day', pos: '50% 30%' },
-  { id: 'costume-crew', caption: 'Trick or treat', pos: '50% 40%' },
-  { id: 'group-hug', caption: 'Group hug', pos: '50% 42%' },
-  { id: 'floor-pile', caption: 'Silly faces', pos: '50% 50%' },
+  { id: 'rink-hug', caption: '5th grade skating trip', pos: '50% 30%' },
+  { id: 'costume-crew', caption: 'Halloween with the Quads', pos: '50% 40%' },
+  { id: 'group-hug', caption: 'My 1st bday sleepover', pos: '50% 42%' },
+  { id: 'floor-pile', caption: 'Cousins', pos: '50% 50%' },
   { id: 'camp-mud', caption: 'Color war at Pembroke', pos: '50% 40%' },
-  { id: 'block-party', caption: 'Block party', pos: '50% 40%' },
-  { id: 'sidewalk-trio', caption: 'Dancing down the block', pos: '50% 35%' },
-  { id: 'halloween-night', caption: 'Spooky hand', pos: '50% 45%' },
+  { id: 'block-party', caption: 'The end of an era', pos: '50% 40%' },
+  { id: 'sidewalk-trio', caption: "Don't ask", pos: '50% 35%' },
+  { id: 'halloween-night', caption: 'It was like that when we found it', pos: '50% 45%' },
 ]
 
 // Every photo on the site, for looking one up by id (the movie uses this).

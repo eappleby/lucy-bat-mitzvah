@@ -6,13 +6,15 @@ import { reducedMotion } from './state.js'
 // She peeks out only from a spot that has been on screen for a few seconds while the
 // page is still, once per visit to that spot, and never two at a time. Once she has shown
 // herself at a spot (or it was found before), holding the mouse over it brings her back
-// out until the mouse leaves. Found spots are remembered on this device only.
+// out until the mouse leaves, and on a phone tapping the spot brings her out for a moment.
+// Found spots are remembered on this device only.
 
 // Every hiding spot on the page. Each one needs a <LucyPeek> with the same id.
 export const SPOTS = ['hero', 'portrait', 'reef-left', 'reef-right', 'bottle', 'clam', 'floor']
 const KEY = 'lucy-hide-seek'
 
 const SHOW_MS = reducedMotion ? 2600 : 1700 // how long she stays out
+const TAP_SHOW_MS = reducedMotion ? 3500 : 2600 // how long she stays out after a tap on her spot
 const REST_MS = 6000 // quiet time after a peek before the next one anywhere
 const SETTLE_MS = 1500 // the page has to be still this long
 
@@ -106,7 +108,7 @@ function duck() {
 
 // The mouse is over a spot she has already shown herself at: come out and stay out.
 export function hoverIn(id) {
-  if (!revealed.has(id) || (peek.id && peek.id !== id)) return
+  if (!revealed.has(id) || found.value.includes(id) || (peek.id && peek.id !== id)) return
   clearTimeout(hideTimer)
   peek.id = id
   peek.hover = true
@@ -121,13 +123,28 @@ export function hoverOut(id) {
   }
 }
 
-export function catchLucy(id) {
-  if (peek.id !== id || peek.caught) return
-  peek.caught = true
-  if (!found.value.includes(id)) found.value.push(id)
+// A tap on a spot she has already shown herself at (phones have no hover): out for a moment.
+export function tapReveal(id) {
+  if (!revealed.has(id) || found.value.includes(id) || peek.id) return
+  peek.id = id
+  peek.caught = false
+  peek.hover = false
   clearTimeout(hideTimer)
-  // A quick wave, then she ducks, or stays out if the mouse is still on her.
-  hideTimer = setTimeout(() => (peek.hover ? (peek.caught = false) : duck()), 700)
+  hideTimer = setTimeout(duck, TAP_SHOW_MS)
+}
+
+// Clicked while she is out, or at a spot already found (where she stays out): she pops up
+// with open arms for a moment, then settles back into her found pose (LucyPeek's 'stay').
+const HUG_MS = 1400
+export function catchLucy(id) {
+  if (peek.caught) return
+  const isFound = found.value.includes(id)
+  if (peek.id ? peek.id !== id : !isFound) return
+  peek.id = id
+  peek.caught = true
+  if (!isFound) found.value.push(id)
+  clearTimeout(hideTimer)
+  hideTimer = setTimeout(duck, HUG_MS)
 }
 
 // For tuning spots in `npm run dev`: __hideSeek.show('clam') holds her out at one spot,

@@ -5,7 +5,7 @@
 // See lib/hideSeek.js for when she peeks.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { copy } from '../content.js'
-import { catchLucy, hoverIn, hoverOut, peek, register, revealed, setVisible, unregister } from '../lib/hideSeek.js'
+import { catchLucy, found, hoverIn, hoverOut, peek, register, revealed, setVisible, tapReveal, unregister } from '../lib/hideSeek.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -20,7 +20,12 @@ const H = 69
 
 const el = ref(null)
 const pos = ref({ left: 0, top: 0 })
-const phase = computed(() => (peek.id !== props.id ? 'hidden' : peek.caught ? 'caught' : 'out'))
+// 'caught': popped up with open arms. Once found, she stays out at that spot for good in a
+// different pose, hand on her head ('stay').
+const phase = computed(() => {
+  if (peek.id === props.id) return peek.caught ? 'caught' : 'out'
+  return found.value.includes(props.id) ? 'stay' : 'hidden'
+})
 let observer
 
 function place() {
@@ -52,17 +57,26 @@ function onPageClick(e) {
 }
 
 // Once she has shown herself here, a mouse over the spot (where she leans out, plus a
-// margin) brings her back out until it leaves. Touch screens have no hover, so this is
-// mouse only.
-const HOVER_MARGIN = 18
+// margin) brings her back out until it leaves. Touch screens have no hover, so there a
+// tap on the spot brings her out for a moment instead, and a second tap on her catches her.
+const MARGIN = 18
 let hovering = false
+let lastPointer = 'mouse'
+function inSpot(e) {
+  const r = el.value?.getBoundingClientRect()
+  return !!r && e.clientX > r.left - MARGIN && e.clientX < r.right + MARGIN && e.clientY > r.top - MARGIN && e.clientY < r.bottom + MARGIN
+}
+function onPointerDown(e) {
+  lastPointer = e.pointerType
+}
+function onSpotTap(e) {
+  // Only while she is hidden; once she is out, onPageClick handles the catch.
+  if (lastPointer === 'mouse' || phase.value !== 'hidden' || !revealed.has(props.id) || !inSpot(e)) return
+  tapReveal(props.id)
+}
 function onPointerMove(e) {
   if (e.pointerType !== 'mouse' || !revealed.has(props.id)) return
-  const r = el.value?.getBoundingClientRect()
-  if (!r) return
-  const inside =
-    e.clientX > r.left - HOVER_MARGIN && e.clientX < r.right + HOVER_MARGIN &&
-    e.clientY > r.top - HOVER_MARGIN && e.clientY < r.bottom + HOVER_MARGIN
+  const inside = inSpot(e)
   if (inside && !hovering) {
     hovering = true
     hoverIn(props.id)
@@ -72,11 +86,16 @@ function onPointerMove(e) {
   }
 }
 
-watch(phase, (p) => {
-  if (p === 'out') place()
-  if (p === 'out') document.addEventListener('click', onPageClick, true)
-  else document.removeEventListener('click', onPageClick, true)
-})
+// She can be clicked while peeking out, and at a found spot (for another hug).
+watch(
+  phase,
+  (p) => {
+    if (p === 'out') place()
+    if (p === 'out' || p === 'stay') document.addEventListener('click', onPageClick, true)
+    else if (p === 'hidden') document.removeEventListener('click', onPageClick, true)
+  },
+  { immediate: true },
+)
 
 onMounted(() => {
   register(props.id)
@@ -91,6 +110,8 @@ onMounted(() => {
   }
   window.addEventListener('resize', place)
   document.addEventListener('pointermove', onPointerMove, { passive: true })
+  document.addEventListener('pointerdown', onPointerDown, { passive: true, capture: true })
+  document.addEventListener('click', onSpotTap)
   // The drawing may not have loaded yet, so place her again once it has.
   el.value?.nextElementSibling?.addEventListener?.('load', place)
 })
@@ -100,6 +121,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', place)
   document.removeEventListener('click', onPageClick, true)
   document.removeEventListener('pointermove', onPointerMove)
+  document.removeEventListener('pointerdown', onPointerDown, { capture: true })
+  document.removeEventListener('click', onSpotTap)
 })
 </script>
 
