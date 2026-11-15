@@ -76,7 +76,7 @@ export const mainPhoto = { id: 'orange-gates', caption: 'Kyoto, Japan', pos: '50
 
 // Lucy over the years, youngest first.
 export const timeline = [
-  { id: 'baby-bouncer', caption: 'Me and my BFF, Penny', pos: '45% 35%' },
+  { id: 'baby-bouncer', caption: 'Me and my BFF', pos: '45% 35%' },
   { id: 'toddler-curls', caption: "Hi! I'm 2", pos: '50% 40%' },
   { id: 'teal-dress', caption: 'Nature girl', pos: '45% 32%' },
   { id: 'swim-goggles', caption: 'Fountain time', pos: '50% 30%' },
