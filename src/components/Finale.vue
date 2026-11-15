@@ -12,6 +12,7 @@ import LucyPeek from './LucyPeek.vue'
       <p class="finale__body">{{ copy.finale.body }}</p>
     </div>
 
+    <LucyPeek id="sand" :x="0.35" :y="0.07" />
     <div class="floor__sand" aria-hidden="true">
       <img class="floor__art floor__art--a" src="/art/seaweed-a.webp" alt="" loading="lazy" />
       <LucyPeek id="floor" :y="0.07" />

@@ -8,7 +8,7 @@ import LucyPeek from './LucyPeek.vue'
   <section class="zone shallows" data-zone="The shallows">
     <img class="swim swim--right shallows__school" src="/art/fish-blue-school.webp" alt="" />
     <div class="zone__inner shallows__grid">
-      <LucyPeek id="portrait" dir="right" :x="0.95" :y="0.76" />
+      <LucyPeek id="portrait" dir="right" :x="0.92" :y="0.6" :reach="0.75" />
       <button class="portrait" :aria-label="'Open photo: ' + mainPhoto.caption" @click="openLightbox([mainPhoto], 0)">
         <img :src="photoSrc(mainPhoto.id)" :style="{ objectPosition: mainPhoto.pos }" :alt="mainPhoto.caption" />
       </button>
@@ -24,6 +24,7 @@ import LucyPeek from './LucyPeek.vue'
       <ol class="years__strip">
         <li v-for="(p, i) in timeline" :key="p.id" class="years__item" :style="{ '--tilt': [-4, 3, -2, 4, -3, 2, -1][i % 7] + 'deg' }">
           <LucyPeek v-if="i === 1" id="polaroid" dir="right" :x="0.96" :y="0.7" />
+          <LucyPeek v-if="i === 4" id="polaroid-2" dir="right" :x="0.96" :y="0.7" />
           <button class="snap" :aria-label="'Open photo: ' + p.caption" @click="openLightbox(timeline, i)">
             <img :src="photoThumb(p.id)" :style="{ objectPosition: p.pos }" :alt="p.caption" loading="lazy" />
             <span>{{ p.caption }}</span>

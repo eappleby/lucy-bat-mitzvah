@@ -293,7 +293,9 @@
   overflow: hidden;
   pointer-events: none;
 }
-.zone__inner > .peek { z-index: -1; } /* under the portrait, the note, and the clam */
+.peek:not(.is-settled) { visibility: hidden; } /* until her drawing is in place (LucyPeek checkReady) */
+.zone__inner > .peek,
+.hero-center > .peek { z-index: -1; } /* under the portrait, the note, and the clam */
 .peek__lucy {
   position: absolute;
   inset: 0;
@@ -321,11 +323,11 @@
 .peek--up.is-caught .peek__lucy { transform: translateY(14%); }
 .peek--up.is-stay .peek__lucy { transform: translateY(50%) rotate(-8deg); }
 .peek--right .peek__lucy { transform: translateX(-100%); transform-origin: 50% 100%; }
-.peek--right.is-out .peek__lucy { transform: translateX(-52%) rotate(7deg); }
+.peek--right.is-out .peek__lucy { transform: translateX(calc((var(--reach) - 1) * 100%)) rotate(7deg); }
 .peek--right.is-caught .peek__lucy { transform: translateX(-12%); }
 .peek--right.is-stay .peek__lucy { transform: translateX(-36%) rotate(-6deg); }
 .peek--left .peek__lucy { transform: translateX(100%) scaleX(-1); transform-origin: 50% 100%; }
-.peek--left.is-out .peek__lucy { transform: translateX(52%) scaleX(-1) rotate(7deg); }
+.peek--left.is-out .peek__lucy { transform: translateX(calc((1 - var(--reach)) * 100%)) scaleX(-1) rotate(7deg); }
 .peek--left.is-caught .peek__lucy { transform: translateX(12%) scaleX(-1); }
 .peek--left.is-stay .peek__lucy { transform: translateX(36%) scaleX(-1) rotate(-6deg); }
 .peek.is-caught .peek__lucy { background-position: 88.889% 0; animation: none; cursor: default; transition-duration: 0.3s; }

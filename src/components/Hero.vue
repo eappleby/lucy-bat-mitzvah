@@ -42,7 +42,6 @@ function dive() {
   <header class="hero" :class="{ 'is-ready': ready }">
     <template v-for="(name, i) in frame" :key="name">
       <LucyPeek v-if="name === 'shell-big'" id="hero" :y="0.05" />
-      <LucyPeek v-if="name === 'coral-orange-b'" id="hero-coral" dir="left" :x="0.18" :y="0.62" />
       <img class="hero-art" :class="'hero-art--' + name" :src="`/art/${name}.webp`" :style="{ '--i': i }" alt="" />
     </template>
 
@@ -64,6 +63,7 @@ function dive() {
         </div>
       </div>
 
+      <LucyPeek id="dive-in" :x="0.8" :y="0.12" />
       <button class="btn btn--big" @click="dive">
         Dive in
         <span class="btn__arrow" aria-hidden="true"></span>

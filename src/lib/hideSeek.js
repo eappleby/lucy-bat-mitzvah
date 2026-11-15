@@ -11,7 +11,7 @@ import { reducedMotion } from './state.js'
 
 // Every hiding spot on the page. Each one needs a <LucyPeek> with the same id.
 export const SPOTS = [
-  'hero', 'hero-coral', 'portrait', 'polaroid', 'reef-left', 'reef-right', 'bottle', 'bottle-shell', 'clam', 'floor',
+  'hero', 'dive-in', 'portrait', 'polaroid', 'polaroid-2', 'bottle', 'bottle-side', 'clam', 'floor', 'sand',
 ]
 const KEY = 'lucy-hide-seek'
 

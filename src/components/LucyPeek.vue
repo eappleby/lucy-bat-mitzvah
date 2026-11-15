@@ -2,6 +2,7 @@
 // One of Lucy's hiding spots. Put it right before the drawing she hides behind, as a
 // sibling, so the drawing paints over her. `dir` is the way she leans out ('up', 'left',
 // 'right'). x and y are fractions of the drawing's box: the point her feet line up with.
+// reach is how much of her leans out sideways while she peeks ('left' and 'right' only).
 // See lib/hideSeek.js for when she peeks.
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { copy } from '../content.js'
@@ -12,6 +13,7 @@ const props = defineProps({
   dir: { type: String, default: 'up' },
   x: { type: Number, default: 0.5 },
   y: { type: Number, default: 0.25 },
+  reach: { type: Number, default: 0.48 },
 })
 
 // The sprite frame is 40 x 46, drawn at 1.5x so she stays small.
@@ -28,8 +30,40 @@ const phase = computed(() => {
 })
 let observer
 
+// The drawing she hides behind: the next sibling that is not another hiding spot (two spots
+// can share one drawing, like the top and the side of the bottle note card).
+function artEl() {
+  let n = el.value?.nextElementSibling
+  while (n?.classList.contains('peek')) n = n.nextElementSibling
+  return n
+}
+
+// She stays invisible until her drawing has loaded and finished popping in (the top art
+// fades and scales in, lazy images arrive late), so she is never seen before it covers her.
+const ready = ref(false)
+let intersecting = false
+let readyTimer = 0
+function artSettled(art) {
+  if (art.tagName === 'IMG' && !(art.complete && art.naturalWidth)) return false
+  if (parseFloat(getComputedStyle(art).opacity) < 0.99) return false
+  // Still in the middle of its pop in (a CSS transition; looping animations like a bob are fine).
+  const popping = (a) => typeof CSSTransition !== 'undefined' && a instanceof CSSTransition && a.playState === 'running'
+  return !(art.getAnimations?.() || []).some(popping)
+}
+function checkReady(tries = 0) {
+  const art = artEl()
+  if (!art) return
+  if (artSettled(art) || tries > 75) {
+    ready.value = true
+    place()
+    if (intersecting) setVisible(props.id, true)
+    return
+  }
+  readyTimer = setTimeout(() => checkReady(tries + 1), 200)
+}
+
 function place() {
-  const art = el.value?.nextElementSibling
+  const art = artEl()
   if (!art) return
   // offset* ignore transforms, so a bobbing or wiggling drawing does not move her spot.
   const ax = art.offsetLeft + art.offsetWidth * props.x
@@ -100,11 +134,12 @@ watch(
 onMounted(() => {
   register(props.id)
   place()
-  const art = el.value?.nextElementSibling
+  const art = artEl()
   if (art && 'IntersectionObserver' in window) {
     observer = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) place()
-      setVisible(props.id, e.isIntersecting)
+      intersecting = e.isIntersecting
+      if (intersecting) place()
+      setVisible(props.id, intersecting && ready.value)
     }, { threshold: 0.6 })
     observer.observe(art)
   }
@@ -113,9 +148,11 @@ onMounted(() => {
   document.addEventListener('pointerdown', onPointerDown, { passive: true, capture: true })
   document.addEventListener('click', onSpotTap)
   // The drawing may not have loaded yet, so place her again once it has.
-  el.value?.nextElementSibling?.addEventListener?.('load', place)
+  artEl()?.addEventListener?.('load', place)
+  checkReady()
 })
 onUnmounted(() => {
+  clearTimeout(readyTimer)
   observer?.disconnect()
   unregister(props.id)
   window.removeEventListener('resize', place)
@@ -131,8 +168,8 @@ onUnmounted(() => {
     ref="el"
     class="peek"
     :data-spot="id"
-    :class="['peek--' + dir, 'is-' + phase]"
-    :style="{ left: pos.left + 'px', top: pos.top + 'px', width: W + 'px', height: H + 'px' }"
+    :class="['peek--' + dir, 'is-' + phase, { 'is-settled': ready }]"
+    :style="{ left: pos.left + 'px', top: pos.top + 'px', width: W + 'px', height: H + 'px', '--reach': reach }"
   >
     <button
       type="button"
