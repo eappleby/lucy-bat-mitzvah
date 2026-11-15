@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { event } from '../content.js'
+import LucyPeek from './LucyPeek.vue'
 
 const ready = ref(false)
 const now = ref(Date.now())
@@ -39,15 +40,10 @@ function dive() {
 
 <template>
   <header class="hero" :class="{ 'is-ready': ready }">
-    <img
-      v-for="(name, i) in frame"
-      :key="name"
-      class="hero-art"
-      :class="'hero-art--' + name"
-      :src="`/art/${name}.webp`"
-      :style="{ '--i': i }"
-      alt=""
-    />
+    <template v-for="(name, i) in frame" :key="name">
+      <LucyPeek v-if="name === 'shell-big'" id="hero" :y="0.05" />
+      <img class="hero-art" :class="'hero-art--' + name" :src="`/art/${name}.webp`" :style="{ '--i': i }" alt="" />
+    </template>
 
     <div class="hero-center">
       <p class="hero-whose">{{ event.whose }}</p>

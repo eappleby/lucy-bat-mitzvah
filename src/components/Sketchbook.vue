@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import { copy } from '../content.js'
 import { supabase, artUrl } from '../lib/supabase.js'
-import Pearl from './Pearl.vue'
 
 const posts = ref([])
 const loaded = ref(false)
@@ -40,7 +39,6 @@ onMounted(async () => {
     </div>
     <img class="swim swim--right sketchbook__fish" src="/art/fish-orange-trio.webp" alt="" loading="lazy" />
     <img class="sketchbook__weed" src="/art/seaweed-a.webp" alt="" loading="lazy" />
-    <Pearl id="sketchbook" class="pearl--sketchbook" />
 
     <div v-if="open" class="modal" role="dialog" aria-modal="true" :aria-label="open.title" @click.self="open = null">
       <article class="modal__card modal__card--page">

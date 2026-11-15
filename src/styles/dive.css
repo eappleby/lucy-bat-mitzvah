@@ -284,65 +284,75 @@
   to { transform: translateX(-30vw) scaleX(-1); }
 }
 
-/* ---------- Pearls to find ---------- */
-.pearl {
+/* ---------- Hide and seek ---------- */
+/* Lucy is the 8-bit sprite from "How I got here" (10 frames of 40 x 46: walk 0 to 3,
+   idle 4 and 5, dance 6 to 9; frame n sits at n / 9 * 100%), drawn small. Each spot is a
+   box that clips her, placed right before its drawing so the drawing paints over her. */
+.peek {
   position: absolute;
-  z-index: 3;
-  width: 30px;
-  height: 30px;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.zone__inner > .peek { z-index: -1; } /* under the portrait, the note, and the clam */
+.floor__sand > .peek { z-index: auto; }
+.peek__lucy {
+  position: absolute;
+  inset: 0;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #fff 0 14%, var(--pearl) 46%, #d8c2a2 100%);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35), 0 3px 8px rgba(0, 30, 90, 0.35);
-  animation: glint 3.2s ease-in-out infinite;
+  background: url('/journey/sprites/teen.png') no-repeat 44.444% 0 / 1000% 100%;
+  image-rendering: pixelated;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1);
+  animation: peek-idle 1.4s steps(1) infinite;
 }
-.pearl::after {
-  content: '';
-  position: absolute;
-  inset: -12px;
+.peek__lucy:focus-visible { outline: 3px solid var(--coral); outline-offset: -3px; }
+.peek.is-hidden .peek__lucy {
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.3s ease-in, visibility 0s 0.3s;
 }
-.pearl.is-popping { animation: pearl-pop 0.5s ease-out forwards; }
-.pearl.is-found:not(.is-popping) { opacity: 0; pointer-events: none; }
-@keyframes glint {
-  50% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.2), 0 3px 8px rgba(0, 30, 90, 0.35); }
-}
-@keyframes pearl-pop {
-  40% { transform: scale(1.9); opacity: 1; }
-  to { transform: scale(0.2) translateY(-60px); opacity: 0; }
-}
-.pearl--shallows { right: 7%; bottom: 5%; }
-.pearl--reef-a { left: 5%; top: 9%; }
-.pearl--reef-b { right: 12%; bottom: 3%; }
-.pearl--journey-a { right: 10%; top: 30%; }
-.pearl--journey-b { left: 8%; bottom: 20%; }
-.pearl--bottle { left: 46%; bottom: 4%; }
-.pearl--floor { left: 9%; bottom: 150px; }
+.peek.is-caught .peek__lucy { background-position: 88.889% 0; animation: none; cursor: default; }
 
-.pearl-counter {
+/* Hidden and peeking positions for each way she leans out. Only her head and shoulders show. */
+.peek--up .peek__lucy { transform: translateY(100%); }
+.peek--up:is(.is-out, .is-caught) .peek__lucy { transform: translateY(58%); }
+.peek--right .peek__lucy { transform: translateX(-100%); transform-origin: 50% 100%; }
+.peek--right:is(.is-out, .is-caught) .peek__lucy { transform: translateX(-52%) rotate(7deg); }
+.peek--left .peek__lucy { transform: translateX(100%) scaleX(-1); transform-origin: 50% 100%; }
+.peek--left:is(.is-out, .is-caught) .peek__lucy { transform: translateX(52%) scaleX(-1) rotate(7deg); }
+@keyframes peek-idle {
+  0% { background-position: 44.444% 0; }
+  85% { background-position: 55.556% 0; }
+}
+
+/* The tally, only after she has been found once. */
+.found-counter {
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.15rem 0.9rem 0.15rem 0.6rem;
-  background: #fff;
-  border: 2.5px solid var(--ink);
+  gap: 0.4rem;
+  padding: 0.1rem 0.8rem 0.1rem 0.4rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 2px solid var(--ink);
   border-radius: var(--wobble);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   opacity: 0;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
 }
-.pearl-counter.is-on { opacity: 1; }
-.pearl-counter.is-bump { transform: scale(1.18) rotate(-3deg); }
-.pearl-counter__dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, #fff 0 14%, var(--pearl) 46%, #d8c2a2 100%);
-  box-shadow: 0 0 0 1.5px #c9b08b;
+.found-counter.is-on { opacity: 1; }
+.found-counter.is-bump { transform: scale(1.12) rotate(-2deg); }
+/* Her face: the top of the idle frame. */
+.found-counter__face {
+  width: 20px;
+  height: 20px;
+  background: url('/journey/sprites/teen.png') no-repeat 44.444% 6% / 1000% 230%;
+  image-rendering: pixelated;
 }
 
 .party {
@@ -362,7 +372,21 @@
   text-align: center;
   animation: card-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.party__card img { width: 120px; margin: 0 auto 0.5rem; }
+.party__lucy {
+  display: block;
+  width: 80px;
+  height: 92px;
+  margin: 0 auto 0.5rem;
+  background: url('/journey/sprites/teen.png') no-repeat 66.667% 0 / 1000% 100%;
+  image-rendering: pixelated;
+  animation: party-dance 0.6s steps(1) infinite;
+}
+@keyframes party-dance {
+  0% { background-position: 66.667% 0; }
+  25% { background-position: 77.778% 0; }
+  50% { background-position: 88.889% 0; }
+  75% { background-position: 100% 0; }
+}
 .party__card h2 { font-size: 2.2rem; }
 .party__fish img {
   position: absolute;
@@ -863,7 +887,6 @@ button.page:hover { transform: rotate(0deg) scale(1.04); }
   .gauge__track { display: none; }
   .gauge__read { flex-direction: row; gap: 0.5rem; min-width: 0; }
   .finale { padding-bottom: 250px; }
-  .pearl--reef-a { top: 1.5%; left: 80%; }
 
   .floor__sand { height: 130px; }
 }

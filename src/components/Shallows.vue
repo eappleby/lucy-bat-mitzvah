@@ -1,13 +1,14 @@
 <script setup>
 import { copy, mainPhoto, timeline, photoSrc, photoThumb } from '../content.js'
 import { openLightbox } from '../lib/state.js'
-import Pearl from './Pearl.vue'
+import LucyPeek from './LucyPeek.vue'
 </script>
 
 <template>
   <section class="zone shallows" data-zone="The shallows">
     <img class="swim swim--right shallows__school" src="/art/fish-blue-school.webp" alt="" />
     <div class="zone__inner shallows__grid">
+      <LucyPeek id="portrait" dir="right" :x="0.95" :y="0.76" />
       <button class="portrait" :aria-label="'Open photo: ' + mainPhoto.caption" @click="openLightbox([mainPhoto], 0)">
         <img :src="photoSrc(mainPhoto.id)" :style="{ objectPosition: mainPhoto.pos }" :alt="mainPhoto.caption" />
       </button>
@@ -29,6 +30,5 @@ import Pearl from './Pearl.vue'
         </li>
       </ol>
     </div>
-    <Pearl id="shallows" class="pearl--shallows" />
   </section>
 </template>

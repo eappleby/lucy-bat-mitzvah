@@ -9,7 +9,7 @@ import Bottle from './components/Bottle.vue'
 import Finale from './components/Finale.vue'
 import DepthGauge from './components/DepthGauge.vue'
 import TurtleBuddy from './components/TurtleBuddy.vue'
-import PearlCounter from './components/PearlCounter.vue'
+import FoundCounter from './components/FoundCounter.vue'
 import Lightbox from './components/Lightbox.vue'
 import Bubbles from './components/Bubbles.vue'
 </script>
@@ -26,7 +26,7 @@ import Bubbles from './components/Bubbles.vue'
       <Finale />
     </main>
     <DepthGauge />
-    <PearlCounter />
+    <FoundCounter />
     <TurtleBuddy />
     <Lightbox />
   </div>

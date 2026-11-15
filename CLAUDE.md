@@ -28,6 +28,7 @@ Vite + Vue 3 (script setup, plain JS), Supabase (Postgres, Auth, Storage), Cloud
 - Secrets go in Cloudflare Pages settings and `.dev.vars`, never in the repo or in `shared/public-config.js`.
 - The site is unlisted and must not be indexed, archived, or used for AI training. Keep the robots, googlebot, and bingbot meta tags and the canonical link in `index.html`, the block everything `robots.txt` with its named AI crawlers, and the `X-Robots-Tag` header in `public/_headers`. Keep the three robots values identical. The canonical address is `https://www.lucybatmitzvah.com`; it must match `SITE_URL`.
 - Art in `public/art/` is cut from the family's save the date. New art must match it: marker and colored pencil look, the palette in `base.css`. No characters from films or books, anywhere on the site.
+- Hide and seek on Meet Lucy (`lib/hideSeek.js`, `components/LucyPeek.vue`) must stay subtle and never pull attention from the page: no instructions, no visible counter before the first find, Lucy small with only her head and shoulders out, at most one peek per visit to a spot, only while the page is still, no sound and no flashy effects. Each `LucyPeek` goes right before its drawing so the drawing paints over her. It reuses `public/journey/sprites/teen.png`; if `npm run journey` changes that sheet's frame layout, update the percentages in `dive.css`.
 - The game in `components/journey/` is deliberately 8-bit: whole pixels only (1 pixel = 8 world units), flat colors, dark outlines, the Press Start 2P font. Characters are light cartoons, not likenesses, and no photo faces. Lucy moves only with left and right input (arrow keys, the on screen buttons, sideways swipes); never take over vertical page scrolling. At color war, Lucy and her camp friends are on the gold team (`C.gold` in `scripts/journey/draw.mjs`), never blue.
 - Do not put real guest names or addresses in code, tests, or fixtures. Use made-up names.
 - All motion must respect `prefers-reduced-motion` (see the block at the end of `dive.css`).
@@ -48,11 +49,11 @@ Update `README.md` and this file, and remove anything in them that is no longer 
 
 ## Status
 
-Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game (shared top 10 in `pearl_scores`) while off, animated save the date at `/movie` with an MP4 export script, admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through CloudMailin, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
+Done: contact info check (personal email with the full contact card and Confirm info or Update info, the `/i/<token>` flow with a family editor, and the shared `/address` form), Meet Lucy at `/` behind an admin switch that shows Coming soon with the Pearl dive game (shared top 10 in `pearl_scores`) while off, animated save the date at `/movie` with an MP4 export script, hide and seek on Meet Lucy (replaced the 7 hidden pearls), admin (guest list with main contact, relationships, and info status, CSV import and export, inbox, contact email through CloudMailin, Meet Lucy switch, bottle notes, Lucy's sketchbook, events), schema including RSVP tables.
 
 Hidden for now: Lucy's sketchbook section (component kept, admin still works).
 
-Guesses to confirm with the family: the order of the photos in `timeline` (no dates on the files) and which photos count as friends.
+Guesses to confirm with the family: which photos go in "Some of my friends and family" (`friends`). The `timeline` order and captions came from the family.
 
 Not built yet: RSVP pages on `/i/<token>` (tables `events`, `household_events`, `rsvps` and `households.personal_message` are ready), hotels and schedule pages, save the date and invitation emails.
 

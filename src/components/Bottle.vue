@@ -2,7 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { copy } from '../content.js'
 import { supabase, friendlyError } from '../lib/supabase.js'
-import Pearl from './Pearl.vue'
+import LucyPeek from './LucyPeek.vue'
 
 const form = reactive({ name: '', message: '', website: '' })
 const state = ref('idle') // idle | sending | sent
@@ -55,6 +55,7 @@ function again() {
         </div>
       </div>
 
+      <LucyPeek v-if="state !== 'sent'" id="bottle" :x="0.86" :y="0.02" />
       <form v-if="state !== 'sent'" class="note sketch" @submit.prevent="send">
         <label class="field">
           <span>Your name</span>
@@ -76,7 +77,6 @@ function again() {
     </div>
     <img class="swim swim--right bottle-bay__fish" src="/art/fish-red.webp" alt="" loading="lazy" />
     <img class="bottle-bay__shell" src="/art/shell-pearls.webp" alt="" loading="lazy" />
-    <Pearl id="bottle" class="pearl--bottle" />
 
     <div v-if="reading" class="modal" role="dialog" aria-modal="true" aria-label="Message in a bottle" @click.self="reading = null">
       <article class="modal__card modal__card--page">

@@ -12,7 +12,6 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import * as W from './world.js'
 import { copy } from '../../content.js'
 import { reducedMotion } from '../../lib/state.js'
-import Pearl from '../Pearl.vue'
 import '@fontsource/press-start-2p/400.css'
 import './journey.css'
 
@@ -576,7 +575,6 @@ onUnmounted(() => {
   <section class="journey" data-zone="How I got here">
     <div class="zone__inner journey__intro">
       <h2 class="zone__title">{{ copy.journey.heading }}</h2>
-      <Pearl id="journey-a" class="pearl--journey-a" />
     </div>
 
     <!-- The hold: the game sticks in place while the page scrolls past it for a moment. -->
@@ -615,7 +613,6 @@ onUnmounted(() => {
     </div>
 
     <div class="zone__inner journey__outro">
-      <Pearl id="journey-b" class="pearl--journey-b" />
     </div>
   </section>
 </template>

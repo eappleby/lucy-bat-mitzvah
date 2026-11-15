@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { copy, friends, photoThumb } from '../content.js'
 import { openLightbox } from '../lib/state.js'
-import Pearl from './Pearl.vue'
+import LucyPeek from './LucyPeek.vue'
 
 const sizes = [1.25, 0.9, 1.1, 0.8, 1.35, 0.95, 1.15, 0.85, 1.2, 1, 0.9, 1.3, 0.85, 1.1, 0.95, 1.2, 0.8, 1.05, 0.9]
 const popping = ref(-1)
@@ -18,7 +18,9 @@ function pop(i) {
 
 <template>
   <section class="zone reef" data-zone="The reef">
+    <LucyPeek id="reef-left" dir="right" :x="0.62" :y="0.6" />
     <img class="reef__coral reef__coral--l" src="/art/coral-pink.webp" alt="" loading="lazy" />
+    <LucyPeek id="reef-right" dir="left" :x="0.4" :y="0.55" />
     <img class="reef__coral reef__coral--r" src="/art/coral-orange-b.webp" alt="" loading="lazy" />
     <div class="zone__inner">
       <h2 class="zone__title">{{ copy.reef.heading }}</h2>
@@ -37,7 +39,5 @@ function pop(i) {
       </div>
     </div>
     <img class="swim swim--left reef__clown" src="/art/clownfish.webp" alt="" loading="lazy" />
-    <Pearl id="reef-a" class="pearl--reef-a" />
-    <Pearl id="reef-b" class="pearl--reef-b" />
   </section>
 </template>

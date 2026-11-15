@@ -47,13 +47,22 @@ export const copy = {
     body: ["I'm becoming a bat mitzvah on March 20, 2027, and I want you there."],
     timelineHeading: 'Me, over the years',
   },
-  reef: { heading: 'The reef crew' },
+  reef: { heading: 'Some of my friends and family' },
   journey: {
     heading: 'How I got here',
     hint: 'Hold right arrow to walk',
     hintTouch: 'Hold the arrow or swipe',
   },
   bottle: { heading: 'Message in a bottle' },
+  // Hide and seek: Lucy peeks out from behind drawings. Nothing explains it on the page;
+  // the counter and these words only show once she has been found.
+  hideSeek: {
+    lucyLabel: 'Lucy',
+    counter: '{found} of {total} hiding spots',
+    allHeading: 'You found all my hiding spots!',
+    allBody: 'See you March 20!',
+    close: 'Keep swimming',
+  },
   finale: {
     heading: 'Invitation to follow.',
     body: 'Stay tuned!',
@@ -67,16 +76,16 @@ export const mainPhoto = { id: 'orange-gates', caption: 'A thousand orange gates
 
 // Lucy over the years, youngest first.
 export const timeline = [
-  { id: 'baby-bouncer', caption: 'Baby Lucy', pos: '45% 35%' },
-  { id: 'toddler-curls', caption: 'Curls!', pos: '50% 40%' },
-  { id: 'teal-dress', caption: 'Hi there', pos: '45% 32%' },
-  { id: 'swim-goggles', caption: 'Ready to swim', pos: '50% 30%' },
-  { id: 'helmet-hug', caption: 'Bike day with Mom', pos: '62% 35%' },
-  { id: 'giant-boba', caption: 'Biggest boba ever', pos: '22% 42%' },
-  { id: 'pink-jacket', caption: 'Almost 13', pos: '50% 30%' },
+  { id: 'baby-bouncer', caption: 'Me and my BFF, Penny', pos: '45% 35%' },
+  { id: 'toddler-curls', caption: "Hi! I'm 2", pos: '50% 40%' },
+  { id: 'teal-dress', caption: 'Nature girl', pos: '45% 32%' },
+  { id: 'swim-goggles', caption: 'Fountain time', pos: '50% 30%' },
+  { id: 'helmet-hug', caption: 'Momma', pos: '62% 35%' },
+  { id: 'giant-boba', caption: 'Ordered the XL', pos: '22% 42%' },
+  { id: 'pink-jacket', caption: 'Me', pos: '50% 30%' },
 ]
 
-// The reef crew: friends only.
+// "Some of my friends and family" (the Reef section).
 export const friends = [
   { id: 'couch-four', caption: 'The original crew', pos: '50% 40%' },
   { id: 'art-class', caption: 'Art class', pos: '62% 30%' },
