@@ -10,27 +10,72 @@ const props = defineProps({ userEmail: { type: String, default: '' } })
 
 const status = ref(null) // { configured, from } once the server answers
 const statusError = ref('')
+// first: the contact info email. followup: a reminder for households that got it and have not answered.
+const kind = ref('first')
+const followUp = computed(() => kind.value === 'followup')
 const audience = ref('unsent')
 const picked = ref(new Set())
 const previewId = ref(null)
 const sending = ref(false)
 const confirmSend = ref(false)
 const results = ref(null)
-// One subject for households we have info for, another for those we don't.
-const subjects = reactive({ check: copy.contact.subjectCheck, fresh: copy.contact.subjectNew })
-const subjectFor = (h) => (hasInfo(h) ? subjects.check : subjects.fresh)
-const build = (household) => buildContactEmail({ household, origin, subject: subjectFor(household) })
+// For each email, one subject for households we have info for and another for those we don't.
+const subjects = reactive({
+  first: { check: copy.contact.subjectCheck, fresh: copy.contact.subjectNew },
+  followup: { check: copy.contact.subjectFollowUpCheck, fresh: copy.contact.subjectFollowUpNew },
+})
+const subjectFor = (h) => (hasInfo(h) ? subjects[kind.value].check : subjects[kind.value].fresh)
+const build = (household) =>
+  buildContactEmail({ household, origin, subject: subjectFor(household), followUp: followUp.value })
 
 const origin = SITE_URL
 
-const candidates = computed(() =>
-  store.households.filter((h) => {
-    if (!h.email) return false
-    if (audience.value === 'unsent') return !h.address_request_sent_at
-    if (audience.value === 'unanswered') return addressStatus(h) !== 'confirmed'
-    return true
-  }),
-)
+const audiences = {
+  first: [
+    ['unsent', 'Not emailed yet'],
+    ['unanswered', 'Has not confirmed their info'],
+    ['all', 'Everyone with an email'],
+  ],
+  followup: [
+    ['noanswer', 'No answer yet'],
+    ['needed', 'Needs address'],
+    ['unconfirmed', 'Has address, not confirmed'],
+  ],
+}
+
+function inAudience(h, a) {
+  if (!h.email) return false
+  const s = addressStatus(h)
+  if (a === 'unsent') return !h.address_request_sent_at
+  if (a === 'unanswered') return s !== 'confirmed'
+  if (a === 'all') return true
+  // Follow ups go only to households that already got the first email and have not answered.
+  if (!h.address_request_sent_at || s === 'confirmed') return false
+  return a === 'noanswer' || s === a
+}
+const countFor = (a) => store.households.filter((h) => inAudience(h, a)).length
+const candidates = computed(() => store.households.filter((h) => inAudience(h, audience.value)))
+// Answers from the shared /address form that are not matched to a household yet.
+const unmatched = computed(() => store.submissions.filter((s) => s.status === 'new').length)
+
+// Follow ups already sent, by household id: { count, last }.
+const followUps = ref({})
+async function loadFollowUps() {
+  const { data, error } = await supabase
+    .from('email_log')
+    .select('household_id, created_at')
+    .eq('kind', 'contact-followup')
+    .is('error', null)
+  if (failed(error, 'load the follow ups')) return
+  const out = {}
+  for (const r of data) {
+    if (!r.household_id) continue
+    const o = (out[r.household_id] ||= { count: 0, last: null })
+    o.count++
+    if (!o.last || r.created_at > o.last) o.last = r.created_at
+  }
+  followUps.value = out
+}
 const recipients = computed(() => candidates.value.filter((h) => picked.value.has(h.id)))
 const noEmail = computed(() => store.households.filter((h) => !h.email && addressStatus(h) !== 'confirmed').length)
 const previewHousehold = computed(
@@ -38,6 +83,7 @@ const previewHousehold = computed(
 )
 const preview = computed(() => (previewHousehold.value ? build(previewHousehold.value) : null))
 
+watch(kind, (k) => (audience.value = audiences[k][0][0]))
 watch(audience, () => {
   picked.value = new Set()
   confirmSend.value = false
@@ -69,6 +115,7 @@ async function api(method, body) {
 }
 
 onMounted(async () => {
+  loadFollowUps()
   try {
     status.value = await api('GET')
   } catch (e) {
@@ -93,28 +140,30 @@ async function sendAll() {
   if (!confirmSend.value) return (confirmSend.value = true)
   confirmSend.value = false
   sending.value = true
-  const list = recipients.value
+  // Build every message before sending so the subjects and kind can't change partway.
+  const list = recipients.value.map((h) => ({ h, msg: build(h) }))
   const all = []
   try {
     for (let i = 0; i < list.length; i += 25) {
       const chunk = list.slice(i, i + 25)
-      const out = await api('POST', { messages: chunk.map(build) })
-      out.results.forEach((r, j) => all.push({ household: chunk[j], ...r }))
+      const out = await api('POST', { messages: chunk.map((c) => c.msg) })
+      out.results.forEach((r, j) => all.push({ household: chunk[j].h, msg: chunk[j].msg, ...r }))
     }
   } catch (e) {
     toast(e.message, 'error')
   }
   if (all.length) {
     const log = all.map((r) => ({
-      household_id: r.household.id, kind: 'contact-check', to_email: r.household.email,
-      subject: subjectFor(r.household), postmark_id: r.id || null, error: r.ok ? null : r.error,
+      household_id: r.household.id, kind: r.msg.tag, to_email: r.household.email,
+      subject: r.msg.subject, postmark_id: r.id || null, error: r.ok ? null : r.error,
     }))
     failed((await supabase.from('email_log').insert(log)).error, 'write the email log')
     const okIds = all.filter((r) => r.ok).map((r) => r.household.id)
     if (okIds.length) {
-      await supabase.from('households').update({ address_request_sent_at: new Date().toISOString() }).in('id', okIds)
+      const { error } = await supabase.from('households').update({ address_request_sent_at: new Date().toISOString() }).in('id', okIds)
+      failed(error, 'save when they were emailed')
     }
-    await loadHouseholds()
+    await Promise.all([loadHouseholds(), loadFollowUps()])
     results.value = all
     picked.value = new Set()
     toast(`Sent ${okIds.length} of ${all.length}`)
@@ -127,6 +176,7 @@ async function sendAll() {
   <section>
     <div class="atools"><h2>Contact info email</h2></div>
     <p class="ahint">Each household gets its own email showing what we have for them (address, phone, email, family). If everything is there, it asks "Still correct?" with Confirm info and Update info buttons. If something is missing, it marks it and asks them to add it. Every answer is saved to the guest list.</p>
+    <p v-if="followUp" class="ahint">The follow up is the same email with a reminder as its opening line. It only goes to households that already got the first email and have not confirmed or sent their info.</p>
 
     <p v-if="status?.configured" class="anote anote--ok">CloudMailin is connected. Emails go out from {{ status.from }}.</p>
     <div v-else-if="status" class="anote anote--warn">
@@ -139,8 +189,14 @@ async function sendAll() {
     <div class="aemail">
       <div class="aemail__side">
         <form class="apanel" @submit.prevent>
-          <label class="afield"><span>Subject when we have their info</span><input v-model="subjects.check" /></label>
-          <label class="afield"><span>Subject when we don't</span><input v-model="subjects.fresh" /></label>
+          <label class="afield"><span>Which email</span>
+            <select v-model="kind" :disabled="sending">
+              <option value="first">First email</option>
+              <option value="followup">Follow up for no answer ({{ countFor('noanswer') }})</option>
+            </select>
+          </label>
+          <label class="afield"><span>Subject when we have their info</span><input v-model="subjects[kind].check" /></label>
+          <label class="afield"><span>Subject when we don't</span><input v-model="subjects[kind].fresh" /></label>
           <div class="atools">
             <span class="atools__gap"></span>
             <button type="button" class="abtn abtn--small" :disabled="sending || !status?.configured || !preview" @click="sendTest">Send this preview to {{ userEmail }}</button>
@@ -149,10 +205,8 @@ async function sendAll() {
 
         <div class="atools">
           <h3>Who gets it</h3>
-          <select v-model="audience" aria-label="Which households">
-            <option value="unsent">Not emailed yet</option>
-            <option value="unanswered">Has not confirmed their info</option>
-            <option value="all">Everyone with an email</option>
+          <select v-model="audience" aria-label="Which households" :disabled="sending">
+            <option v-for="[value, label] in audiences[kind]" :key="value" :value="value">{{ label }} ({{ countFor(value) }})</option>
           </select>
         </div>
         <div class="atools">
@@ -164,20 +218,23 @@ async function sendAll() {
           </button>
         </div>
         <p v-if="noEmail" class="ahint">{{ plural(noEmail, 'household') }} that {{ noEmail === 1 ? 'has' : 'have' }} not confirmed {{ noEmail === 1 ? 'has' : 'have' }} no email on file. Text them their personal link from the Guest list tab.</p>
+        <p v-if="followUp && unmatched" class="anote anote--warn">{{ plural(unmatched, 'answer') }} from the shared form {{ unmatched === 1 ? 'is' : 'are' }} waiting in the Inbox. Save {{ unmatched === 1 ? 'it' : 'them' }} to a household first so no one who already answered gets a reminder.</p>
 
         <div v-if="!candidates.length" class="aempty">
           <h2>No one to email in this group</h2>
-          <p>Households need an email address on the Guest list tab to appear here.</p>
+          <p v-if="followUp">Everyone in this group who got the first email has answered.</p>
+          <p v-else>Households need an email address on the Guest list tab to appear here.</p>
         </div>
         <div v-else class="atable-wrap">
           <table class="atable">
-            <thead><tr><th></th><th>Household</th><th>Info</th><th>Last emailed</th></tr></thead>
+            <thead><tr><th></th><th>Household</th><th>Info</th><th>Last emailed</th><th v-if="followUp">Follow ups sent</th></tr></thead>
             <tbody>
               <tr v-for="h in candidates" :key="h.id" :class="{ 'is-previewed': previewHousehold?.id === h.id }" @click="previewId = h.id">
                 <td><input type="checkbox" :checked="picked.has(h.id)" :aria-label="'Email ' + h.name" @click.stop="toggle(h.id)" /></td>
                 <td><strong>{{ h.name }}</strong><small>{{ h.email }}</small></td>
                 <td><span class="achip" :class="'achip--' + addressStatus(h)">{{ statusLabel[addressStatus(h)] }}</span></td>
                 <td>{{ h.address_request_sent_at ? formatWhen(h.address_request_sent_at) : 'Never' }}</td>
+                <td v-if="followUp">{{ followUps[h.id]?.count || 'None' }}</td>
               </tr>
             </tbody>
           </table>

@@ -1,4 +1,5 @@
-// The "Contact info up to date?" email, personalized for one household.
+// The "Contact info up to date?" email, personalized for one household. The follow up
+// (followUp: true) is the same email with a reminder as its opening line.
 // Email programs ignore most CSS, so this is old fashioned table HTML with inline styles.
 // The heading is hand lettering baked into a picture (public/email/header-check.jpg, or
 // header-new.jpg when we have no address yet); see scripts/render-email-art.cjs.
@@ -19,7 +20,8 @@ const esc = (s) =>
     .replace(/"/g, '&quot;')
 
 export const hasInfo = (h) => addressLines(h).length > 0
-export const subjectFor = (h) => (hasInfo(h) ? t.subjectCheck : t.subjectNew)
+export const subjectFor = (h, followUp = false) =>
+  followUp ? (hasInfo(h) ? t.subjectFollowUpCheck : t.subjectFollowUpNew) : hasInfo(h) ? t.subjectCheck : t.subjectNew
 
 // The household's card, in the shape contactBlocks expects.
 export function infoBlocks(h) {
@@ -55,12 +57,13 @@ ${b.missing
 </td></tr></table>`
 }
 
-export function buildContactEmail({ household: h, origin, subject }) {
+export function buildContactEmail({ household: h, origin, subject, followUp = false }) {
   const link = `${origin}/i/${h.invite_token}`
   const check = hasInfo(h)
   const blocks = infoBlocks(h)
   const missing = missingFrom(blocks).length > 0
-  subject = subject || subjectFor(h)
+  subject = subject || subjectFor(h, followUp)
+  const intro = check ? (followUp ? t.followUpCheckIntro : t.checkIntro) : followUp ? t.followUpNewIntro : t.newIntro
 
   // Three endings: everything is there (confirm or update), something is missing (add it),
   // or we have no address at all (add my info).
@@ -74,7 +77,7 @@ ${para(t.missingBody, 17)}
 ${para(t.stillBody, 17)}
 <div>${button(`${link}?answer=yes`, t.confirm, CYAN)}${button(`${link}?answer=no`, t.update, CORAL)}</div>`
 
-  const body = `${para(check ? t.checkIntro : t.newIntro)}
+  const body = `${para(intro)}
 ${card(blocks)}
 ${ending}`
 
@@ -94,7 +97,7 @@ ${body}
 </body></html>`
 
   const text = [
-    check ? t.checkHeading : t.newHeading, '', check ? t.checkIntro : t.newIntro, '',
+    check ? t.checkHeading : t.newHeading, '', intro, '',
     ...blocks.flatMap((b) => [b.label, ...(b.missing ? [t.missingNote] : b.lines), '']),
     ...(!check
       ? [`${t.addMine}: ${link}?answer=no`]
@@ -103,5 +106,5 @@ ${body}
         : [t.stillHeading, t.stillBody, '', `${t.confirm}: ${link}?answer=yes`, `${t.update}: ${link}?answer=no`]),
   ].join('\n')
 
-  return { to: h.email, subject, html, text, tag: 'contact-check' }
+  return { to: h.email, subject, html, text, tag: followUp ? 'contact-followup' : 'contact-check' }
 }

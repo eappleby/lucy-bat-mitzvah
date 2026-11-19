@@ -58,7 +58,7 @@ src/
   lib/hideSeek.js           Hide and seek on Meet Lucy: spots, timing, what was found
   lib/contact.js            The contact card (address, family, what is missing), shared by the page, email, and admin
   admin/                    The admin, loaded only at /admin
-  admin/emailTemplate.js    The contact email
+  admin/emailTemplate.js    The contact email and its follow up
   styles/                   base.css (shared), dive.css, address.css, admin.css
 functions/api/send-email.js CloudMailin sender, admin only
 public/art/                 Illustrations cut from the save the date
@@ -177,6 +177,7 @@ An easter egg with no instructions. The 8-bit Lucy from "How I got here" hides i
 - **Pearl dive top 10:** scores live in the `pearl_scores` table. A score that makes the top 10 asks for up to 3 letters or digits. To remove one, delete its row in Supabase (**Table Editor > pearl_scores**).
 - **Open Meet Lucy to everyone:** Admin > Guest list > Open it to everyone. Switch to Coming soon puts it back.
 - **Send the contact emails:** Admin > Email. Pick who gets it (not emailed yet, not confirmed yet, or everyone), click a row to preview that household's email, send yourself a test, then send. There is one subject for households we have info for and another for those we don't. Links and pictures in the email always point to `SITE_URL`, so a test from localhost shows what guests will get once the site is deployed.
+- **Follow up with people who have not answered:** Admin > Email > Which email > Follow up. It is the same email with a reminder as its opening line and its own subjects (`followUp*` and `subjectFollowUp*` in `copy.contact`). Only households that already got the first email and have not confirmed or sent their info are listed. Filter them to everyone with no answer, only those who need an address, or only those with an address who have not confirmed. The table shows how many follow ups each household has had (counted from `email_log` rows with kind `contact-followup`). Save any new Inbox answers to their households first so no one who already answered gets a reminder.
 - **Watch the answers:** Admin > Guest list shows each household as Confirmed, Not confirmed, or Needs address. Info from the shared `/address` link arrives in Admin > Inbox; saving it to a household fills in the address and adds any family members it does not have yet.
 - **Mailing labels:** Admin > Guest list > Export for mailing labels.
 - **Change words:** edit `src/content.js`.
