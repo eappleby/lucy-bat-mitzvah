@@ -2,8 +2,8 @@
 // Email programs ignore most CSS, so this is old fashioned table HTML with inline styles.
 // The first email's heading is hand lettering baked into a picture (public/email/header-check.jpg,
 // or header-new.jpg when we have no address yet); see scripts/render-email-art.cjs.
-// The follow up (followUp: true) is text only, like a typed note: a reminder as its opening
-// line, the contact info as plain lines, and text links instead of buttons.
+// The follow up (followUp: true) is a short personal note in plain text with no HTML part,
+// which spam filters treat more kindly. It shows only the address and phone; the link has the rest.
 import { copy } from '../content.js'
 import { addressLines, contactBlocks, missingFrom } from '../lib/contact.js'
 
@@ -22,7 +22,7 @@ const esc = (s) =>
 
 export const hasInfo = (h) => addressLines(h).length > 0
 export const subjectFor = (h, followUp = false) =>
-  followUp ? (hasInfo(h) ? t.subjectFollowUpCheck : t.subjectFollowUpNew) : hasInfo(h) ? t.subjectCheck : t.subjectNew
+  followUp ? (hasInfo(h) ? t.followUp.subjectCheck : t.followUp.subjectNew) : hasInfo(h) ? t.subjectCheck : t.subjectNew
 
 // The household's card, in the shape contactBlocks expects.
 export function infoBlocks(h) {
@@ -102,45 +102,47 @@ ${body}
 </body></html>`
 }
 
-// The follow up: plain paragraphs and links, no pictures, colors, or boxes.
-// A heading becomes the first sentence of its paragraph, so it needs end punctuation.
-const asSentence = (s) => (/[.?!]$/.test(s) ? s : `${s}.`)
-const askLine = (e) => `${asSentence(e.heading)} ${e.body}`
-
-function noteHtml({ subject, intro, blocks, ending: e }) {
-  const p = (inner) => `<p style="margin:0 0 16px;">${inner}</p>`
-  const info = blocks.map((b) => p([b.label, ...(b.missing ? [t.missingNote] : b.lines)].map(esc).join('<br>'))).join('\n')
-  const ask = e.heading ? p(esc(askLine(e))) + '\n' : ''
-  const links = p(e.buttons.map((b) => `<a href="${b.href}">${esc(b.label)}</a>`).join('<br>'))
-  return `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(subject)}</title></head>
-<body style="margin:0; padding:16px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.5; color:#222222;">
-<div style="max-width:560px;">
-${p(esc(intro))}
-${info}
-${ask}${links}
-</div>
-</body></html>`
+// The follow up note. With an address and phone it asks them to confirm or update; with
+// either one missing it asks them to reply with it or use the form.
+function followUpText(h, link) {
+  const f = t.followUp
+  const first = (h.guests || []).find((g) => g.is_primary)?.first_name?.trim()
+  const addr = addressLines(h)
+  const phone = (h.phone || '').trim()
+  const missing = !addr.length && !phone ? f.yourBoth : !addr.length ? f.yourAddress : !phone ? f.yourPhone : ''
+  const lines = [first ? f.greeting.replace('{name}', first) : f.greetingNoName, '']
+  if (!addr.length) {
+    lines.push(`${f.intro} ${f.askNew.replace('{missing}', missing)}`, `${link}?answer=no`)
+  } else {
+    const shown = [h.name, ...addr, phone].filter(Boolean)
+    if (missing) {
+      lines.push(`${f.intro} ${f.askAddress}`, '', ...shown, '', f.askMissing.replace('{missing}', missing), `${link}?answer=no`)
+    } else {
+      lines.push(`${f.intro} ${f.askInfo}`, '', ...shown, '', f.confirmLead, `${link}?answer=yes`, '', f.updateLead, `${link}?answer=no`)
+    }
+  }
+  lines.push('', ...f.signoff)
+  return lines.join('\n')
 }
 
 export function buildContactEmail({ household: h, origin, subject, followUp = false }) {
   const link = `${origin}/i/${h.invite_token}`
+  subject = subject || subjectFor(h, followUp)
+  if (followUp) return { to: h.email, subject, html: null, text: followUpText(h, link), tag: 'contact-followup' }
+
   const check = hasInfo(h)
   const blocks = infoBlocks(h)
   const missing = missingFrom(blocks).length > 0
-  subject = subject || subjectFor(h, followUp)
-  const intro = check ? (followUp ? t.followUpCheckIntro : t.checkIntro) : followUp ? t.followUpNewIntro : t.newIntro
-
+  const intro = check ? t.checkIntro : t.newIntro
   const ending = endingFor(link, check, missing)
-  const page = { subject, link, check, intro, blocks, ending, origin }
-  const html = followUp ? noteHtml(page) : decoratedHtml(page)
+  const html = decoratedHtml({ subject, link, check, intro, blocks, ending, origin })
 
   const text = [
-    ...(followUp ? [] : [check ? t.checkHeading : t.newHeading, '']), intro, '',
+    check ? t.checkHeading : t.newHeading, '', intro, '',
     ...blocks.flatMap((b) => [b.label, ...(b.missing ? [t.missingNote] : b.lines), '']),
-    ...(ending.heading ? (followUp ? [askLine(ending), ''] : [ending.heading, ending.body, '']) : []),
+    ...(ending.heading ? [ending.heading, ending.body, ''] : []),
     ...ending.buttons.map((x) => `${x.label}: ${x.href}`),
   ].join('\n')
 
-  return { to: h.email, subject, html, text, tag: followUp ? 'contact-followup' : 'contact-check' }
+  return { to: h.email, subject, html, text, tag: 'contact-check' }
 }

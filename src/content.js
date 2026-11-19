@@ -41,11 +41,25 @@ export const copy = {
     subjectCheck: 'Lucy wants to know if your contact info is still up to date?',
     subjectNew: 'Lucy wants to know your contact info',
     // The follow up email, for households that got the first one and have not answered.
-    // Text only, with links instead of buttons and a reminder as the opening line.
-    followUpCheckIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up soon. Could you take a quick look below and let Lucy know if your info is still correct?",
-    followUpNewIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up soon. Lucy still needs your contact info so she can send you all the details.",
-    subjectFollowUpCheck: 'Reminder: Is your contact info still up to date?',
-    subjectFollowUpNew: 'Reminder: Lucy still needs your contact info',
+    // A short personal note sent as plain text only. {name} is the main contact's first name.
+    // Change "early next year" once it is 2027.
+    followUp: {
+      greeting: 'Hi {name},',
+      greetingNoName: 'Hi there,',
+      intro: "Lucy's bat mitzvah is coming up early next year and we're excited to send you all the details.",
+      askInfo: 'Is this still your information?',
+      askAddress: 'Is this still your address?',
+      confirmLead: 'If it is, you can confirm here:',
+      updateLead: 'If anything changed, reply to this email or update it here:',
+      askNew: 'Could you reply to this email with {missing}, or fill out this form:',
+      askMissing: 'Could you reply to this email with {missing} and any changes, or fill out this form:',
+      yourAddress: 'your address',
+      yourPhone: 'your phone number',
+      yourBoth: 'your address and phone number',
+      signoff: ['Thanks!', 'The Appleby family'],
+      subjectCheck: 'Reminder: Is your contact info still up to date?',
+      subjectNew: 'Reminder: Lucy still needs your contact info',
+    },
   },
 
   shallows: {

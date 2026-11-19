@@ -22,7 +22,7 @@ const results = ref(null)
 // For each email, one subject for households we have info for and another for those we don't.
 const subjects = reactive({
   first: { check: copy.contact.subjectCheck, fresh: copy.contact.subjectNew },
-  followup: { check: copy.contact.subjectFollowUpCheck, fresh: copy.contact.subjectFollowUpNew },
+  followup: { check: copy.contact.followUp.subjectCheck, fresh: copy.contact.followUp.subjectNew },
 })
 const subjectFor = (h) => (hasInfo(h) ? subjects[kind.value].check : subjects[kind.value].fresh)
 const build = (household) =>
@@ -176,7 +176,7 @@ async function sendAll() {
   <section>
     <div class="atools"><h2>Contact info email</h2></div>
     <p class="ahint">Each household gets its own email showing what we have for them (address, phone, email, family). If everything is there, it asks "Still correct?" with Confirm info and Update info buttons. If something is missing, it marks it and asks them to add it. Every answer is saved to the guest list.</p>
-    <p v-if="followUp" class="ahint">The follow up is a text only version of the same email, with links instead of buttons and a reminder as its opening line. It only goes to households that already got the first email and have not confirmed or sent their info.</p>
+    <p v-if="followUp" class="ahint">The follow up is a short personal note in plain text (no HTML, which helps with spam filters). It greets the main contact by first name and shows only the address and phone. If both are there it asks them to confirm or update; if either is missing it asks them to reply with it or fill out the form. Replies come to your inbox, so add those to the guest list by hand. It only goes to households that already got the first email and have not confirmed or sent their info.</p>
 
     <p v-if="status?.configured" class="anote anote--ok">CloudMailin is connected. Emails go out from {{ status.from }}.</p>
     <div v-else-if="status" class="anote anote--warn">
@@ -251,7 +251,8 @@ async function sendAll() {
       <div class="aemail__preview">
         <h3>Preview{{ previewHousehold ? ': ' + previewHousehold.name : '' }}</h3>
         <p class="ahint">Click a row to preview that household's email.</p>
-        <iframe v-if="preview" class="aemail__frame" :srcdoc="preview.html" title="Email preview"></iframe>
+        <iframe v-if="preview?.html" class="aemail__frame" :srcdoc="preview.html" title="Email preview"></iframe>
+        <pre v-else-if="preview" class="aemail__frame aemail__text">{{ preview.text }}</pre>
         <div v-else class="aempty"><p>Add a household with an email to see a preview.</p></div>
       </div>
     </div>
