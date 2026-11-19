@@ -41,9 +41,9 @@ export const copy = {
     subjectCheck: 'Lucy wants to know if your contact info is still up to date?',
     subjectNew: 'Lucy wants to know your contact info',
     // The follow up email, for households that got the first one and have not answered.
-    // Same card and buttons; only the opening line and subject change.
-    followUpCheckIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up on March 20, 2027. Could you take a quick look below and let Lucy know if your info is still correct?",
-    followUpNewIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up on March 20, 2027. Lucy still needs your contact info so she can send you all the details.",
+    // Text only, with links instead of buttons and a reminder as the opening line.
+    followUpCheckIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up soon. Could you take a quick look below and let Lucy know if your info is still correct?",
+    followUpNewIntro: "Just a reminder: Lucy Appleby's bat mitzvah is coming up soon. Lucy still needs your contact info so she can send you all the details.",
     subjectFollowUpCheck: 'Reminder: Is your contact info still up to date?',
     subjectFollowUpNew: 'Reminder: Lucy still needs your contact info',
   },

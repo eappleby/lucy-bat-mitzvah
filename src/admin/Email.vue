@@ -176,7 +176,7 @@ async function sendAll() {
   <section>
     <div class="atools"><h2>Contact info email</h2></div>
     <p class="ahint">Each household gets its own email showing what we have for them (address, phone, email, family). If everything is there, it asks "Still correct?" with Confirm info and Update info buttons. If something is missing, it marks it and asks them to add it. Every answer is saved to the guest list.</p>
-    <p v-if="followUp" class="ahint">The follow up is the same email with a reminder as its opening line. It only goes to households that already got the first email and have not confirmed or sent their info.</p>
+    <p v-if="followUp" class="ahint">The follow up is a text only version of the same email, with links instead of buttons and a reminder as its opening line. It only goes to households that already got the first email and have not confirmed or sent their info.</p>
 
     <p v-if="status?.configured" class="anote anote--ok">CloudMailin is connected. Emails go out from {{ status.from }}.</p>
     <div v-else-if="status" class="anote anote--warn">

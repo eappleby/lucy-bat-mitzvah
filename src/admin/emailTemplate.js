@@ -1,8 +1,9 @@
-// The "Contact info up to date?" email, personalized for one household. The follow up
-// (followUp: true) is the same email with a reminder as its opening line.
+// The "Contact info up to date?" email, personalized for one household.
 // Email programs ignore most CSS, so this is old fashioned table HTML with inline styles.
-// The heading is hand lettering baked into a picture (public/email/header-check.jpg, or
-// header-new.jpg when we have no address yet); see scripts/render-email-art.cjs.
+// The first email's heading is hand lettering baked into a picture (public/email/header-check.jpg,
+// or header-new.jpg when we have no address yet); see scripts/render-email-art.cjs.
+// The follow up (followUp: true) is text only, like a typed note: a reminder as its opening
+// line, the contact info as plain lines, and text links instead of buttons.
 import { copy } from '../content.js'
 import { addressLines, contactBlocks, missingFrom } from '../lib/contact.js'
 
@@ -57,31 +58,35 @@ ${b.missing
 </td></tr></table>`
 }
 
-export function buildContactEmail({ household: h, origin, subject, followUp = false }) {
-  const link = `${origin}/i/${h.invite_token}`
-  const check = hasInfo(h)
-  const blocks = infoBlocks(h)
-  const missing = missingFrom(blocks).length > 0
-  subject = subject || subjectFor(h, followUp)
-  const intro = check ? (followUp ? t.followUpCheckIntro : t.checkIntro) : followUp ? t.followUpNewIntro : t.newIntro
+// Three endings: everything is there (confirm or update), something is missing (add it),
+// or we have no address at all (add my info).
+function endingFor(link, check, missing) {
+  if (!check) return { buttons: [{ href: `${link}?answer=no`, label: t.addMine, color: CYAN, primary: true }] }
+  if (missing) {
+    return { heading: t.missingHeading, body: t.missingBody, buttons: [{ href: `${link}?answer=no`, label: t.addMissing, color: CORAL, primary: true }] }
+  }
+  return {
+    heading: t.stillHeading,
+    body: t.stillBody,
+    buttons: [
+      { href: `${link}?answer=yes`, label: t.confirm, color: CYAN, primary: true },
+      { href: `${link}?answer=no`, label: t.update, color: CORAL },
+    ],
+  }
+}
 
-  // Three endings: everything is there (confirm or update), something is missing (add it),
-  // or we have no address at all (add my info).
-  const ending = !check
-    ? `<div>${button(`${link}?answer=no`, t.addMine, CYAN)}</div>`
-    : missing
-      ? `<p style="margin:0 0 8px; font-family:${FONT}; font-size:24px; font-weight:bold; color:${INK};">${esc(t.missingHeading)}</p>
-${para(t.missingBody, 17)}
-<div>${button(`${link}?answer=no`, t.addMissing, CORAL)}</div>`
-      : `<p style="margin:0 0 8px; font-family:${FONT}; font-size:24px; font-weight:bold; color:${INK};">${esc(t.stillHeading)}</p>
-${para(t.stillBody, 17)}
-<div>${button(`${link}?answer=yes`, t.confirm, CYAN)}${button(`${link}?answer=no`, t.update, CORAL)}</div>`
+function decoratedHtml({ subject, link, check, intro, blocks, ending: e, origin }) {
+  const ending = `${e.heading
+    ? `<p style="margin:0 0 8px; font-family:${FONT}; font-size:24px; font-weight:bold; color:${INK};">${esc(e.heading)}</p>
+${para(e.body, 17)}
+`
+    : ''}<div>${e.buttons.map((b) => button(b.href, b.label, b.color)).join('')}</div>`
 
   const body = `${para(intro)}
 ${card(blocks)}
 ${ending}`
 
-  const html = `<!doctype html>
+  return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(subject)}</title></head>
 <body style="margin:0; padding:0; background:#d9f3fb;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#d9f3fb"><tr><td align="center" style="padding:24px 12px;">
@@ -95,15 +100,46 @@ ${body}
 <p style="margin:14px 0 0; font-family:${FONT}; font-size:12px; color:#33507e;">This link is just for you: <a href="${link}" style="color:#33507e;">${esc(link)}</a></p>
 </td></tr></table>
 </body></html>`
+}
+
+// The follow up: plain paragraphs and links, no pictures, colors, or boxes.
+// A heading becomes the first sentence of its paragraph, so it needs end punctuation.
+const asSentence = (s) => (/[.?!]$/.test(s) ? s : `${s}.`)
+const askLine = (e) => `${asSentence(e.heading)} ${e.body}`
+
+function noteHtml({ subject, intro, blocks, ending: e }) {
+  const p = (inner) => `<p style="margin:0 0 16px;">${inner}</p>`
+  const info = blocks.map((b) => p([b.label, ...(b.missing ? [t.missingNote] : b.lines)].map(esc).join('<br>'))).join('\n')
+  const ask = e.heading ? p(esc(askLine(e))) + '\n' : ''
+  const links = p(e.buttons.map((b) => `<a href="${b.href}">${esc(b.label)}</a>`).join('<br>'))
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(subject)}</title></head>
+<body style="margin:0; padding:16px; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:1.5; color:#222222;">
+<div style="max-width:560px;">
+${p(esc(intro))}
+${info}
+${ask}${links}
+</div>
+</body></html>`
+}
+
+export function buildContactEmail({ household: h, origin, subject, followUp = false }) {
+  const link = `${origin}/i/${h.invite_token}`
+  const check = hasInfo(h)
+  const blocks = infoBlocks(h)
+  const missing = missingFrom(blocks).length > 0
+  subject = subject || subjectFor(h, followUp)
+  const intro = check ? (followUp ? t.followUpCheckIntro : t.checkIntro) : followUp ? t.followUpNewIntro : t.newIntro
+
+  const ending = endingFor(link, check, missing)
+  const page = { subject, link, check, intro, blocks, ending, origin }
+  const html = followUp ? noteHtml(page) : decoratedHtml(page)
 
   const text = [
-    check ? t.checkHeading : t.newHeading, '', intro, '',
+    ...(followUp ? [] : [check ? t.checkHeading : t.newHeading, '']), intro, '',
     ...blocks.flatMap((b) => [b.label, ...(b.missing ? [t.missingNote] : b.lines), '']),
-    ...(!check
-      ? [`${t.addMine}: ${link}?answer=no`]
-      : missing
-        ? [t.missingHeading, t.missingBody, '', `${t.addMissing}: ${link}?answer=no`]
-        : [t.stillHeading, t.stillBody, '', `${t.confirm}: ${link}?answer=yes`, `${t.update}: ${link}?answer=no`]),
+    ...(ending.heading ? (followUp ? [askLine(ending), ''] : [ending.heading, ending.body, '']) : []),
+    ...ending.buttons.map((x) => `${x.label}: ${x.href}`),
   ].join('\n')
 
   return { to: h.email, subject, html, text, tag: followUp ? 'contact-followup' : 'contact-check' }
